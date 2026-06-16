@@ -277,13 +277,14 @@ function handleRevision(
 
 function handleUserIntervention(
   state: SessionState,
-  content: Record<string, unknown>
+  content: Record<string, unknown>,
+  event: PersistedEvent
 ): SessionState {
   const constraint: Constraint = {
     id: (content.id as string) || "",
     text: (content.text as string) || (content.constraint as string) || "",
     category: (content.category as string) || "general",
-    createdAt: (content.createdAt as string) || new Date().toISOString(),
+    createdAt: (content.createdAt as string) || event.timestamp,
   };
 
   return {
@@ -468,7 +469,7 @@ export function projectSessionState(events: PersistedEvent[]): SessionState {
       case "revision":
         return handleRevision(state, content, event);
       case "user-intervention":
-        return handleUserIntervention(state, content);
+        return handleUserIntervention(state, content, event);
       case "consensus-update":
         return handleConsensusUpdate(state, content);
       case "clarification-request":
@@ -535,7 +536,7 @@ export function applyEvents(
       case "revision":
         return handleRevision(state, content, event);
       case "user-intervention":
-        return handleUserIntervention(state, content);
+        return handleUserIntervention(state, content, event);
       case "consensus-update":
         return handleConsensusUpdate(state, content);
       case "clarification-request":

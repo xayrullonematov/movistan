@@ -81,7 +81,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - evidenceChain: array of event IDs that support the agreement/disagreement claim — enables user verification
     - _Requirements: 14.1, 14.5_
 
-  - [ ]* 3.5 Write property test — Structured Output Schema Conformance
+  - [x]* 3.5 Write property test — Structured Output Schema Conformance
     - **Property 17: Structured Output Schema Conformance**
     - Generate random valid and invalid outputs, verify schema correctly accepts/rejects
     - Verify retry logic triggers on invalid outputs
@@ -110,12 +110,12 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Handle artifact events: artifact-created adds to artifacts[], artifact-updated modifies content/version, artifact-status-changed updates status
     - _Requirements: 6.4, 6.6, 9.2, 12.8, 12.9_
 
-  - [ ]* 4.4 Write property test — Event Sourcing Round-Trip
+  - [x]* 4.4 Write property test — Event Sourcing Round-Trip
     - **Property 1: Event Sourcing Round-Trip**
     - Verify projecting same events always produces identical SessionState
     - **Validates: Requirements 6.4, 6.6, 9.2**
 
-  - [ ]* 4.5 Write property test — Session Agent Invariant
+  - [x]* 4.5 Write property test — Session Agent Invariant
     - **Property 8: Session Agent Invariant**
     - Verify any projected state always has exactly 4 agents
     - **Validates: Requirements 1.2**
@@ -128,7 +128,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Used by session detail API to avoid O(n) full projection on every request
     - _Requirements: 6.8_
 
-  - [ ]* 4.7 Write property test — Snapshot Consistency
+  - [x]* 4.7 Write property test — Snapshot Consistency
     - **Property 22**
     - Full event projection equals snapshot + incremental events
     - **Validates: Requirements 6.8**
@@ -144,7 +144,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - getArtifactVersions: return version history with provenance (sourceEventId, agentId, reasoning per version)
     - _Requirements: 12.1-12.10_
 
-  - [ ]* 5.2 Write property test — Artifact Lifecycle Integrity
+  - [x]* 5.2 Write property test — Artifact Lifecycle Integrity
     - **Property 16: Artifact Lifecycle Integrity**
     - Verify valid type, non-empty title, valid status, monotonically increasing version
     - Verify only valid status transitions
@@ -173,7 +173,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Support configurable pricing per model (input/output token rates)
     - _Requirements: 15.1-15.8_
 
-  - [ ]* 7.2 Write property test — Token Budget Enforcement
+  - [x]* 7.2 Write property test — Token Budget Enforcement
     - **Property 18: Token Budget Enforcement**
     - Verify usage tracked for every call, budget exceeded triggers pause
     - **Validates: Requirements 15.1, 15.4**
@@ -236,7 +236,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Verify deterministic fallback produces valid summary when LLM unavailable
     - **Validates: Requirements 2.6, 2.9, 13.4, 13.5**
 
-  - [ ]* 9.6 Write property test — Context Window Budget Respected
+  - [x]* 9.6 Write property test — Context Window Budget Respected
     - **Property 20: Context Window Budget Respected**
     - Verify total context tokens don't exceed budget, truncation follows priority order
     - **Validates: Requirements 13.8, 15.7**
@@ -262,7 +262,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Include explicit instruction: "Return ONLY valid JSON matching the schema. No markdown, no preamble."
     - _Requirements: 2.6, 2.7, 14.9_
 
-  - [ ]* 10.3 Write property test — Workspace Context Completeness
+  - [x]* 10.3 Write property test — Workspace Context Completeness
     - Verify all prompts include problem, constraints, artifact state
     - Verify schema definition is included in every prompt
     - Verify critique prompts route to specific target agents

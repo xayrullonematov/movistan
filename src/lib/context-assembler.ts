@@ -100,7 +100,7 @@ export const contextAssembler: ContextAssembler = {
       await workspaceSummaryService.generateSummary(sessionId);
 
     // Priority 5: Round summaries (all completed rounds)
-    let roundSummaries: RoundSummary[] =
+    const roundSummaries: RoundSummary[] =
       await roundSummaryService.getRoundSummaries(sessionId);
 
     // Priority 6: Unresolved disagreements from latest consensus

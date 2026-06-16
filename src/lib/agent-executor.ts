@@ -182,7 +182,7 @@ export function createAgentExecutor(sessionId: string, round: number): AgentExec
         llmProvider,
         request,
         model,
-        validate: (raw) => validator.validateCritique(raw),
+        validate: (raw) => validator.validateCritique(raw, agent.id),
         sessionId,
         agentId: agent.id,
         round,

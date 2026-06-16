@@ -49,7 +49,7 @@ function loadDefaults(): AppConfig {
 }
 
 // Initialize config from env on module load
-let currentConfig: AppConfig = loadDefaults();
+const currentConfig: AppConfig = loadDefaults();
 
 // =============================================================================
 // GET /api/config

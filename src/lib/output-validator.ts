@@ -9,6 +9,7 @@
  */
 
 import type {
+  AgentType,
   ConsensusOutput,
   CritiqueOutput,
   OutputValidator as IOutputValidator,
@@ -95,10 +96,9 @@ export class OutputValidatorImpl implements IOutputValidator {
 
   /**
    * Validates raw LLM output as a CritiqueOutput.
-   * Schema-level validation only; caller-level checks for
-   * targetAgentId !== critiquer can be done externally.
+   * Additionally verifies that targetAgentId is not the critiquing agent's own ID.
    */
-  validateCritique(raw: string): ValidationResult<CritiqueOutput> {
+  validateCritique(raw: string, critiquerAgentId?: AgentType): ValidationResult<CritiqueOutput> {
     const parseResult = tryParseJson(raw);
     if (!parseResult.success) {
       return { success: false, errors: [parseResult.error], raw };
@@ -113,7 +113,16 @@ export class OutputValidatorImpl implements IOutputValidator {
       };
     }
 
-    return { success: true, data: zodResult.data as CritiqueOutput };
+    const data = zodResult.data as CritiqueOutput;
+    if (critiquerAgentId && data.targetAgentId === critiquerAgentId) {
+      return {
+        success: false,
+        errors: [`targetAgentId: Critique target cannot be yourself (${critiquerAgentId})`],
+        raw,
+      };
+    }
+
+    return { success: true, data };
   }
 
 
