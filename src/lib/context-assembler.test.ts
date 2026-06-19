@@ -137,7 +137,7 @@ describe("ContextAssembler Property-Based Tests", () => {
       })
     );
 
-    fc.assert(
+    await fc.assert(
       fc.asyncProperty(
         constraintsArb,
         artifactsArb,
@@ -240,6 +240,67 @@ describe("ContextAssembler Property-Based Tests", () => {
       expect(context.currentRoundEvents).toEqual(mockCurrentRoundEvents);
       const hasPriorRoundEvents = context.currentRoundEvents.some(e => e.round < 2);
       expect(hasPriorRoundEvents).toBe(false);
+    });
+
+    it("property: prior rounds are carried as summaries while only the current round contributes full events", async () => {
+      const roundSummaryArb = fc.record({
+        roundNumber: fc.integer({ min: 1 }),
+        keyProposals: fc.array(fc.string()),
+        majorCritiques: fc.array(fc.string()),
+        revisionOutcomes: fc.array(fc.string()),
+        consensusPoints: fc.array(fc.string()),
+        artifactsCreated: fc.nat(),
+        artifactsUpdated: fc.nat(),
+      });
+
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 1, max: 20 }), // current round
+          fc.array(roundSummaryArb, { maxLength: 8 }), // prior-round summaries
+          fc.integer({ min: 0, max: 5 }), // number of current-round events
+          async (currentRound, roundSummaries, eventCount) => {
+            // The event store returns full events ONLY for the current round —
+            // mirrors getRoundEvents(sessionId, currentRound).
+            const currentRoundEvents: PersistedEvent[] = Array.from(
+              { length: eventCount },
+              (_, i) => ({
+                id: `e${i}`,
+                sessionId: "s1",
+                type: "proposal",
+                agentId: "senior-engineer",
+                round: currentRound,
+                stage: "proposal",
+                content: "{}",
+                timestamp: "",
+              })
+            );
+
+            vi.mocked(prisma.session.findUniqueOrThrow).mockResolvedValue({
+              problemDescription: "Problem",
+            } as any);
+            vi.mocked(snapshotManager.projectFromSnapshot).mockResolvedValue({
+              currentRound,
+              constraints: [],
+              consensus: { disagreements: [] },
+            } as any);
+            vi.mocked(eventStore.getRoundEvents).mockResolvedValue(currentRoundEvents);
+            vi.mocked(artifactSummaryService.generateArtifactSummary).mockResolvedValue([]);
+            vi.mocked(workspaceSummaryService.generateSummary).mockResolvedValue("WS");
+            vi.mocked(roundSummaryService.getRoundSummaries).mockResolvedValue(roundSummaries as any);
+
+            // Generous budget so nothing is truncated.
+            const context = await contextAssembler.assembleContext("s1", 1_000_000);
+
+            // Full events come from the current round only — never prior rounds.
+            expect(context.currentRoundEvents.every((e) => e.round === currentRound)).toBe(true);
+            // The assembler scopes the full-event fetch to the current round
+            // (it does not pull the entire session history).
+            expect(eventStore.getRoundEvents).toHaveBeenCalledWith("s1", currentRound);
+            // Prior-round knowledge is represented as compressed summaries.
+            expect(context.roundSummaries).toEqual(roundSummaries);
+          }
+        )
+      );
     });
   });
 });

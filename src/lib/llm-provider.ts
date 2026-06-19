@@ -1,5 +1,6 @@
 /**
- * LLM Provider — Abstraction layer over OpenAI-compatible API calls.
+ * LLM Provider — Abstraction layer over OpenAI-compatible API calls,
+ * with an optional AWS Bedrock branch.
  *
  * Implements the LLMProvider interface with:
  * - Model tier support (different models for different stages)
@@ -7,8 +8,17 @@
  * - Rate-limit handling (Retry-After header)
  * - Timeout support (30s default)
  * - AbortController support for cancellation
+ *
+ * Backend selection (env):
+ * - LLM_PROVIDER=bedrock → AWS Bedrock via ConverseCommand; credentials come
+ *   from the standard AWS chain (env vars / ~/.aws/credentials / IAM role).
+ * - anything else (default) → OpenAI-compatible HTTP at LLM_API_ENDPOINT.
  */
 
+import {
+  BedrockRuntimeClient,
+  ConverseCommand,
+} from "@aws-sdk/client-bedrock-runtime";
 import type {
   LLMProvider,
   LLMRequest,
@@ -106,10 +116,15 @@ export class LLMProviderError extends Error {
 
 /**
  * Creates an LLM provider instance that implements the LLMProvider interface.
- * Uses native fetch (Node 18+) — no external HTTP libraries needed.
+ * Uses native fetch (Node 18+) for the OpenAI-compatible path, or the AWS SDK
+ * for the Bedrock path (LLM_PROVIDER=bedrock).
  */
 export function createLLMProvider(configOverride?: Partial<LLMProviderConfig>): LLMProvider {
   const config = { ...loadConfig(), ...configOverride };
+
+  if ((process.env.LLM_PROVIDER ?? "").toLowerCase() === "bedrock") {
+    return createBedrockProvider(config);
+  }
 
   async function complete(request: LLMRequest, modelOverride?: string): Promise<LLMResponse> {
     const model = modelOverride ?? config.defaultModel;
@@ -431,6 +446,77 @@ export function createCancellableLLMProvider(
       null,
       true
     );
+  }
+
+  return { complete };
+}
+
+// =============================================================================
+// AWS BEDROCK PROVIDER (ConverseCommand)
+//
+// Used when LLM_PROVIDER=bedrock. Credentials and region resolve through the
+// AWS SDK default credential chain (env vars → ~/.aws/credentials → IAM role).
+// AWS_REGION (or AWS_DEFAULT_REGION) selects the region; default us-east-1.
+//
+// JSON output: Bedrock has no native response_format flag. The agent prompts
+// already include "Return ONLY valid JSON…" instructions and the validator
+// retries 2× on schema failure, so this is handled at the layer above.
+// =============================================================================
+
+function createBedrockProvider(config: LLMProviderConfig): LLMProvider {
+  const region =
+    process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? "us-east-1";
+  const client = new BedrockRuntimeClient({ region });
+
+  async function complete(
+    request: LLMRequest,
+    modelOverride?: string
+  ): Promise<LLMResponse> {
+    const modelId = modelOverride ?? config.defaultModel;
+    const temperature = request.temperature ?? config.defaultTemperature;
+    const maxTokens = request.maxTokens ?? config.defaultMaxTokens;
+
+    const command = new ConverseCommand({
+      modelId,
+      system: [{ text: request.systemPrompt }],
+      messages: [
+        { role: "user", content: [{ text: request.userMessage }] },
+      ],
+      inferenceConfig: { temperature, maxTokens },
+    });
+
+    try {
+      const response = await client.send(command);
+
+      // ConverseCommand returns output.message.content as an array of blocks;
+      // for text-only responses there's a single text block.
+      const blocks = response.output?.message?.content ?? [];
+      const content = blocks
+        .map((b) => ("text" in b && typeof b.text === "string" ? b.text : ""))
+        .join("");
+
+      return {
+        content,
+        inputTokens: response.usage?.inputTokens ?? 0,
+        outputTokens: response.usage?.outputTokens ?? 0,
+        model: modelId,
+      };
+    } catch (error) {
+      const status =
+        (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
+          ?.httpStatusCode ?? null;
+      const name = (error as Error)?.name ?? "BedrockError";
+      const message = (error as Error)?.message ?? String(error);
+      const retryable =
+        name === "ThrottlingException" ||
+        name === "ServiceUnavailableException" ||
+        (status !== null && status >= 500);
+      throw new LLMProviderError(
+        `Bedrock ${name}${status ? ` (${status})` : ""}: ${message}`,
+        status,
+        retryable
+      );
+    }
   }
 
   return { complete };

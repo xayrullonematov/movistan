@@ -25,6 +25,8 @@ npx prisma generate    # regenerate client into src/generated/prisma
 
 After editing `prisma/schema.prisma` you must run both `db push` and `generate`. The Prisma client is generated into `src/generated/prisma` (imported as `@/generated/prisma/client`), not `node_modules` — `src/lib/db.ts` wraps it with the libSQL adapter and a global singleton.
 
+Copy `.env.example` → `.env`. Required: `LLM_API_KEY`, `LLM_API_ENDPOINT` (OpenAI-compatible base URL). Tuning: `LLM_MODEL` / `LLM_MODEL_CRITIQUE_TIER` / `LLM_MODEL_SUMMARY_TIER` (model tiering), `DEFAULT_TOKEN_BUDGET`, `MAX_RETRIES`.
+
 Tests run against a **separate** `test.db` (set in `vitest.config.ts`/`vitest.setup.ts`); every test truncates all tables in a `beforeEach`. Run `prisma db push` once so `test.db` has the schema before running tests.
 
 ## Architecture
@@ -45,6 +47,10 @@ A round runs four stages in order: **proposal → critique → revision → cons
 - Agents run via `Promise.allSettled` so one failure doesn't block the others.
 - A `SessionLock` (DB columns `lockedBy`/`lockedAt`, stale after 5 min) prevents concurrent round starts — released in a `finally`. Concurrent start returns 409.
 - **Critique routing is fixed by maximum objective conflict:** Senior↔Performance, Security↔Product. Each agent critiques exactly one other (`getCritiqueTarget` in `agent-configs.ts`).
+
+### Crash recovery
+
+A crash mid-round leaves a session `active` with a stale lock. `startup-recovery.ts` runs once per process (lazily, idempotent) and scans for stale locks; `crash-recovery.ts` replays `stage-progress` events to determine which of the four agents finished each stage and which must be re-executed, then releases the lock. Because state is event-sourced, recovery never loses completed work — preserve this when touching the lock or `stage-progress` event flow.
 
 ### LLM layer
 

@@ -124,15 +124,24 @@ export const CRITIQUE_ROUTING: CritiqueRouting = {
 
 /**
  * Default model tiers — different models for different stages to optimize cost.
- * - proposal/consensus: use stronger model for complex reasoning
- * - critique/revision/summary: use lighter model for simpler evaluation tasks
+ * - proposal/consensus: use stronger model (LLM_MODEL) for complex reasoning
+ * - critique/revision: use cheaper critique tier (LLM_MODEL_CRITIQUE_TIER)
+ * - summary: use cheapest tier (LLM_MODEL_SUMMARY_TIER)
+ *
+ * Values are read from env at module load. The fallbacks match `.env.example`.
  */
+const DEFAULT_MODEL = process.env.LLM_MODEL ?? "gpt-4o";
+const CRITIQUE_TIER_MODEL =
+  process.env.LLM_MODEL_CRITIQUE_TIER ?? DEFAULT_MODEL;
+const SUMMARY_TIER_MODEL =
+  process.env.LLM_MODEL_SUMMARY_TIER ?? CRITIQUE_TIER_MODEL;
+
 export const DEFAULT_MODEL_TIERS: ModelTierConfig = {
-  proposal: "gpt-4o",
-  critique: "gpt-4o-mini",
-  revision: "gpt-4o-mini",
-  consensus: "gpt-4o",
-  summary: "gpt-4o-mini",
+  proposal: DEFAULT_MODEL,
+  critique: CRITIQUE_TIER_MODEL,
+  revision: CRITIQUE_TIER_MODEL,
+  consensus: DEFAULT_MODEL,
+  summary: SUMMARY_TIER_MODEL,
 };
 
 // =============================================================================

@@ -108,65 +108,63 @@ export const contextAssembler: ContextAssembler = {
       state.consensus?.disagreements ?? [];
 
     // --- Token budget enforcement ---
-    // Calculate token usage for each component
-    const currentRoundTokens = estimateTokensForData(currentRoundEvents);
-    const artifactTokens = estimateTokensForData(artifactSummaries);
-    const constraintTokens = estimateTokensForData(constraints);
-    const summaryTokens = estimateTokens(workspaceSummary);
-    const roundSummaryTokens = estimateTokensForData(roundSummaries);
-    const disagreementTokens = estimateTokensForData(unresolvedDisagreements);
-    const problemTokens = estimateTokens(session.problemDescription);
+    // Fixed-cost components (never truncated): current round events, the
+    // unresolved disagreements carried from consensus, and the problem statement.
+    const fixedTokens =
+      estimateTokensForData(currentRoundEvents) +
+      estimateTokensForData(unresolvedDisagreements) +
+      estimateTokens(session.problemDescription);
 
-    let totalTokens =
-      currentRoundTokens +
-      artifactTokens +
-      constraintTokens +
-      summaryTokens +
-      roundSummaryTokens +
-      disagreementTokens +
-      problemTokens;
+    // Truncation operates on copies — never mutate the arrays returned by the
+    // services. Lowest priority is removed first.
+    const finalRoundSummaries = [...roundSummaries];
+    let finalWorkspaceSummary = workspaceSummary;
+    let finalConstraints = constraints;
+    let finalArtifactSummaries = artifactSummaries;
 
-    // Truncation: remove from lowest priority first
+    // Recompute the total from the current working set after every step rather
+    // than decrementing a running counter. Decrementing drifts at budget
+    // boundaries (the array is costed with one ceil but elements are removed
+    // with per-element ceils), which can stop truncation while the context is
+    // still over budget. Recomputing keeps the estimate a consistent upper
+    // bound on the true serialized cost.
+    const totalTokens = () =>
+      fixedTokens +
+      estimateTokensForData(finalArtifactSummaries) +
+      estimateTokensForData(finalConstraints) +
+      estimateTokens(finalWorkspaceSummary) +
+      estimateTokensForData(finalRoundSummaries);
 
-    // Priority 6: Remove prior session context (not implemented in MVP, skip)
-    // Already no priorSessionSummary in MVP
+    // Priority 6: Prior session context (not implemented in MVP) — removed first.
 
-    // Priority 5: Remove oldest round summaries first
-    while (totalTokens > budget && roundSummaries.length > 0) {
-      const removedSummary = roundSummaries.shift()!;
-      const removedTokens = estimateTokensForData(removedSummary);
-      totalTokens -= removedTokens;
+    // Priority 5: Remove oldest round summaries first.
+    while (totalTokens() > budget && finalRoundSummaries.length > 0) {
+      finalRoundSummaries.shift();
     }
 
-    // Priority 4: Remove workspace summary if still over budget
-    let finalWorkspaceSummary = workspaceSummary;
-    if (totalTokens > budget) {
-      totalTokens -= summaryTokens;
+    // Priority 4: Remove workspace summary if still over budget.
+    if (totalTokens() > budget) {
       finalWorkspaceSummary = "";
     }
 
-    // Priority 3: Remove constraints if still over budget
-    let finalConstraints = constraints;
-    if (totalTokens > budget) {
-      totalTokens -= constraintTokens;
+    // Priority 3: Remove constraints if still over budget.
+    if (totalTokens() > budget) {
       finalConstraints = [];
     }
 
-    // Priority 2: Remove artifact summaries if still over budget
-    let finalArtifactSummaries = artifactSummaries;
-    if (totalTokens > budget) {
-      totalTokens -= artifactTokens;
+    // Priority 2: Remove artifact summaries if still over budget.
+    if (totalTokens() > budget) {
       finalArtifactSummaries = [];
     }
 
-    // Priority 1: Current round events are NEVER truncated
+    // Priority 1: Current round events are NEVER truncated.
 
     return {
       problemDescription: session.problemDescription,
       constraints: finalConstraints,
       workspaceSummary: finalWorkspaceSummary,
       artifactSummaries: finalArtifactSummaries,
-      roundSummaries,
+      roundSummaries: finalRoundSummaries,
       currentRoundEvents,
       unresolvedDisagreements,
     };

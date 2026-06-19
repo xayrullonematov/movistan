@@ -8,23 +8,22 @@
  */
 
 import { NextResponse } from "next/server";
-import cuid from "cuid";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
-import { sessionLock } from "@/lib/session-lock";
 import { roundOrchestrator } from "@/lib/round-orchestrator";
 import { prisma } from "@/lib/db";
 
 // =============================================================================
 // POST /api/sessions/[sessionId]/rounds
+//
+// Locking is owned by roundOrchestrator.startRound — it acquires, runs the
+// round, and releases in its own finally block. The route only translates
+// the orchestrator's "is locked" error into a 409.
 // =============================================================================
 
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const lockId = cuid();
-  let lockAcquired = false;
-
   try {
     const { sessionId } = await params;
 
@@ -48,20 +47,8 @@ export async function POST(
       );
     }
 
-    // Acquire session lock — if locked, return 409
-    lockAcquired = await sessionLock.acquire(sessionId, lockId);
-
-    if (!lockAcquired) {
-      return NextResponse.json(
-        { error: "Session is locked", status: 409 },
-        { status: 409 }
-      );
-    }
-
-    // Get cost estimate for this round
     const costEstimate = await tokenBudgetManager.estimateRoundCost(sessionId);
 
-    // Get the current round number
     const session = await prisma.session.findUniqueOrThrow({
       where: { id: sessionId },
       select: { currentRound: true },
@@ -69,13 +56,9 @@ export async function POST(
 
     const nextRound = session.currentRound + 1;
 
-    // Start the round — for MVP, this blocks until round completes
-    // The frontend polls for progress via session detail + events endpoints
+    // For MVP this blocks until the round completes. The frontend polls
+    // session detail + events endpoints for stage-progress updates.
     await roundOrchestrator.startRound(sessionId);
-
-    // Release lock after round completes
-    await sessionLock.release(sessionId, lockId);
-    lockAcquired = false;
 
     return NextResponse.json({
       round: nextRound,
@@ -84,14 +67,8 @@ export async function POST(
       budgetStatus,
     });
   } catch (error) {
-    // Ensure lock is released on error
-    if (lockAcquired) {
-      try {
-        const { sessionId } = await params;
-        await sessionLock.release(sessionId, lockId);
-      } catch {
-        // Best-effort lock release
-      }
+    if (error instanceof Error && error.message.includes("Session is locked")) {
+      return NextResponse.json({ error: "Session is locked" }, { status: 409 });
     }
 
     console.error("POST /api/sessions/[sessionId]/rounds error:", error);

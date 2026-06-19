@@ -97,7 +97,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - getEventsUpTo: filter events before a given timestamp
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ]* 4.2 Write property test — Event Structural Integrity
+  - [x]* 4.2 Write property test — Event Structural Integrity
     - **Property 2: Event Structural Integrity**
     - Verify all persisted events have valid type, timestamp, round ≥ 0, non-empty content
     - Verify agent events have non-null agentId from allowed set
@@ -160,7 +160,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - forceRelease: unconditionally clear lock (for admin/recovery)
     - _Requirements: 3.9_
 
-- [~] 6. Checkpoint — Domain layer tests pass
+- [x] 6. Checkpoint — Domain layer tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Token Budget Manager
@@ -196,7 +196,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Export ModelTierConfig defaults and helper to get config by AgentType
     - _Requirements: 2.2-2.5, 11.4_
 
-  - [ ]* 8.3 Write property test — Agent Prompt Includes Objective Function
+  - [x]* 8.3 Write property test — Agent Prompt Includes Objective Function
     - **Property 3: Agent Prompt Includes Objective Function**
     - Verify each agent has unique, non-empty objective function
     - **Validates: Requirements 2.2-2.5, 2.7**
@@ -221,7 +221,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - This service is ALWAYS deterministic (no LLM call needed — artifacts are already structured)
     - _Requirements: 13.3_
 
-  - [~] 9.4 Implement ContextAssembler
+  - [x] 9.4 Implement ContextAssembler
     - Create `src/lib/context-assembler.ts` implementing ContextAssembler interface
     - assembleContext: combine workspace summary + artifact summaries + round summaries + current round events + constraints + optional priorSessionSummary
     - Apply Context_Window_Budget: prioritize current round events > artifacts > constraints > workspace summary > round summaries > prior session context (truncate lowest priority first)
@@ -229,7 +229,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - priorSessionSummary: optional field populated when user seeds a session from an exported prior session
     - _Requirements: 13.4, 13.5, 13.7, 13.8, 15.7_
 
-  - [ ]* 9.5 Write property test — Context Uses Summaries Not Full History
+  - [x]* 9.5 Write property test — Context Uses Summaries Not Full History
     - **Property 4: Context Uses Summaries Not Full History**
     - Verify agents receive round summaries (not full events) for prior rounds
     - Verify context window budget is respected
@@ -268,7 +268,7 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Verify critique prompts route to specific target agents
     - **Validates: Requirements 2.6, 14.9**
 
-- [ ] 11. Agent Executor and Round Orchestrator (with parallel execution)
+- [x] 11. Agent Executor and Round Orchestrator (with parallel execution)
   - [~] 11.1 Implement Agent Executor
     - Create `src/lib/agent-executor.ts` implementing AgentExecutor interface
     - generateProposal: assemble context → build prompt → select model tier → call LLM → validate output (retry 2x) → track tokens → process artifacts (with dedup check) → return
@@ -296,29 +296,29 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - After round complete: trigger summary generation (round + workspace + artifact)
     - _Requirements: 3.1, 3.7, 3.8, 3.9, 3.10, 1.5, 1.6, 5.1, 5.4, 6.8, 10.9, 12.7_
 
-  - [ ]* 11.3 Write property test — Round Stage Ordering Invariant
+  - [x]* 11.3 Write property test — Round Stage Ordering Invariant
     - **Property 5: Round Stage Ordering Invariant**
     - Events appear in strict stage order within a round
     - **Validates: Requirements 3.1, 3.7**
 
-  - [ ]* 11.4 Write property test — Clarification Pauses Round
+  - [x]* 11.4 Write property test — Clarification Pauses Round
     - **Property 12: Clarification Pauses Round**
     - needsClarification=true in any output pauses round
     - **Validates: Requirements 1.5, 1.6**
 
-  - [ ]* 11.5 Write property test — Auto-Advance After Completion
+  - [x]* 11.5 Write property test — Auto-Advance After Completion
     - **Property 11: Auto-Advance After Stage Completion**
     - Stages advance when all agents complete with valid outputs
     - Verify parallel execution: all 4 agents invoked concurrently (not sequentially)
     - **Validates: Requirements 3.7, 3.8**
 
-  - [ ]* 11.6 Write property test — Artifact Operations From Consensus
+  - [x]* 11.6 Write property test — Artifact Operations From Consensus
     - **Property 19: Artifact Operations From Consensus**
     - Consensus artifactOperations produce corresponding artifact events
     - Verify deduplication: identical title+type does not create duplicate artifact
     - **Validates: Requirements 12.7, 14.5**
 
-  - [ ]* 11.7 Write property test — Provenance Chain Completeness
+  - [x]* 11.7 Write property test — Provenance Chain Completeness
     - **Property 21: Provenance Chain Completeness**
     - Every ArtifactVersion has a non-null sourceEventId that references a valid event in the session
     - Every consensus agreement/disagreement has non-empty evidenceChain referencing valid event IDs
@@ -331,12 +331,12 @@ Implementation progresses incrementally: project scaffolding → domain types �
     - Called on application startup for any session with status='active' and a locked state
     - _Requirements: 6.9_
 
-  - [ ]* 11.9 Write property test — Crash Recovery Correctness
+  - [x]* 11.9 Write property test — Crash Recovery Correctness
     - **Property 23**
     - After simulated mid-stage crash, recovery detects exactly missing agents
     - **Validates: Requirements 6.9**
 
-- [~] 12. Checkpoint — Engine tests pass
+- [x] 12. Checkpoint — Engine tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 13. API Routes — Session and Event Management
