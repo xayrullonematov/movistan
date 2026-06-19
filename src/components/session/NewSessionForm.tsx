@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import ConstraintInput from "./ConstraintInput";
 
 interface ConstraintItem {
@@ -14,6 +15,7 @@ export default function NewSessionForm() {
   const [problemDescription, setProblemDescription] = useState("");
   const [tokenBudget, setTokenBudget] = useState<string>("");
   const [constraints, setConstraints] = useState<ConstraintItem[]>([]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,55 +60,85 @@ export default function NewSessionForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Problem Description */}
       <div>
-        <label htmlFor="problem" className="block text-sm font-medium text-gray-300 mb-1">
-          Problem Description
+        <label htmlFor="problem" className="block text-sm font-medium text-gray-300 mb-2">
+          What engineering problem should the agents debate?
         </label>
         <textarea
           id="problem"
           value={problemDescription}
           onChange={(e) => setProblemDescription(e.target.value)}
-          placeholder="Describe the engineering problem you want the agents to discuss..."
-          className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+          placeholder="Should we migrate our monolith to microservices? We have 50 engineers, 3M daily requests, and need to ship faster. Current deploy takes 45 minutes..."
+          className="w-full h-44 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none text-base leading-relaxed"
           required
         />
-        <p className="text-xs text-gray-500 mt-1">
-          {problemDescription.length}/2000 — Be specific: include context, constraints, and what a good outcome looks like.
+        <p className="text-xs text-gray-500 mt-2">
+          {problemDescription.length}/2000 &mdash; Be specific: include context, constraints, and what a good outcome looks like.
         </p>
       </div>
 
+      {/* Advanced Options Toggle */}
       <div>
-        <label htmlFor="budget" className="block text-sm font-medium text-gray-300 mb-1">
-          Token Budget (optional)
-        </label>
-        <input
-          id="budget"
-          type="number"
-          value={tokenBudget}
-          onChange={(e) => setTokenBudget(e.target.value)}
-          placeholder="e.g., 100000"
-          min="1000"
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-        />
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+        >
+          {showAdvanced ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+          Advanced options
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-4 space-y-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+            {/* Token Budget */}
+            <div>
+              <label htmlFor="budget" className="block text-sm font-medium text-gray-300 mb-1">
+                Token Budget
+              </label>
+              <input
+                id="budget"
+                type="number"
+                value={tokenBudget}
+                onChange={(e) => setTokenBudget(e.target.value)}
+                placeholder="e.g., 100000"
+                min="1000"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum tokens the debate can consume. Leave empty for unlimited.
+              </p>
+            </div>
+
+            {/* Constraints */}
+            <ConstraintInput
+              constraints={constraints}
+              onAdd={addConstraint}
+              onRemove={removeConstraint}
+            />
+          </div>
+        )}
       </div>
 
-      <ConstraintInput
-        constraints={constraints}
-        onAdd={addConstraint}
-        onRemove={removeConstraint}
-      />
-
+      {/* Error Message */}
       {error && (
-        <p className="text-red-400 text-sm">{error}</p>
+        <p className="text-red-400 text-sm bg-red-900/20 border border-red-800/50 rounded-lg px-4 py-2">
+          {error}
+        </p>
       )}
 
+      {/* Submit Button */}
       <button
         type="submit"
         disabled={isSubmitting || !problemDescription.trim()}
-        className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium rounded-lg transition-colors text-sm"
+        className="w-full py-3.5 px-6 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 disabled:shadow-none text-base"
       >
-        {isSubmitting ? "Creating..." : "Start Session"}
+        {isSubmitting ? "Creating Session..." : "Start Debate"}
       </button>
     </form>
   );

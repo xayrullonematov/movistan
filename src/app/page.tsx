@@ -1,49 +1,70 @@
 "use client";
 
+import { motion } from "framer-motion";
 import useSWR from "swr";
-import SessionList from "@/components/session/SessionList";
+import HeroSection from "@/components/landing/HeroSection";
+import HowItWorks from "@/components/landing/HowItWorks";
+import AgentShowcase from "@/components/landing/AgentShowcase";
 import NewSessionForm from "@/components/session/NewSessionForm";
+import SessionList from "@/components/session/SessionList";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-100px" },
+  transition: { duration: 0.6, ease: "easeOut" as const },
+};
 
 export default function Home() {
   const { data, isLoading } = useSWR("/api/sessions", fetcher);
   const sessions = data?.sessions ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-100">AI Engineering Room</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Multi-agent structured debate for engineering decisions
-        </p>
-      </header>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <motion.div {...fadeInUp}>
+        <HeroSection />
+      </motion.div>
 
-      <main className="flex-1 p-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left: New Session Form */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-200 mb-4">New Session</h2>
-            <div className="p-5 border border-gray-700 rounded-lg bg-gray-900/50">
+      {/* How It Works */}
+      <motion.div {...fadeInUp}>
+        <HowItWorks />
+      </motion.div>
+
+      {/* Agent Showcase */}
+      <motion.div {...fadeInUp}>
+        <AgentShowcase />
+      </motion.div>
+
+      {/* Start Session Form */}
+      <motion.div {...fadeInUp}>
+        <section id="form" className="py-24 px-6">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-50 text-center mb-4">
+              Start a Debate
+            </h2>
+            <p className="text-gray-400 text-center mb-10">
+              Describe your engineering problem and let the agents find the best solution.
+            </p>
+            <div className="p-6 md:p-8 rounded-xl bg-gray-900 border border-gray-700">
               <NewSessionForm />
             </div>
-          </section>
+          </div>
+        </section>
+      </motion.div>
 
-          {/* Right: Session List */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-200 mb-4">
-              Sessions {sessions.length > 0 && `(${sessions.length})`}
-            </h2>
-            {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <span className="text-gray-400 text-sm">Loading sessions...</span>
-              </div>
-            ) : (
+      {/* Recent Sessions */}
+      {!isLoading && sessions.length > 0 && (
+        <motion.div {...fadeInUp}>
+          <section className="pb-24 px-6">
+            <div className="max-w-2xl mx-auto">
               <SessionList sessions={sessions} />
-            )}
+            </div>
           </section>
-        </div>
-      </main>
+        </motion.div>
+      )}
     </div>
   );
 }
