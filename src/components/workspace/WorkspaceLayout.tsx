@@ -28,6 +28,8 @@ interface WorkspaceLayoutProps {
   mutate?: () => void;
 }
 
+// SessionState type does not expose a tokenBudget field, so we use a
+// sensible default as the denominator for the token budget progress bar.
 const DEFAULT_TOKEN_BUDGET = 100000;
 
 const stageOrder: RoundStage[] = ["proposal", "critique", "revision", "consensus"];
@@ -386,11 +388,11 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all
                 ${isActiveRound
                   ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                  : isAwaitingIntervention
+                  : isAwaitingIntervention && !startRoundDisabled
                     ? "bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-500/20 animate-pulse"
                     : "bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-500/20"
                 }
-                disabled:opacity-50 disabled:shadow-none disabled:animate-none
+                disabled:opacity-50 disabled:shadow-none
               `}
             >
               {isStartingRound ? (
@@ -406,13 +408,6 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                   Start Next Round
                 </>
               )}
-            </button>
-            <button
-              onClick={handleEndSession}
-              disabled={session.status === "completed"}
-              className="px-3 py-2 text-sm text-red-400/80 hover:text-red-300 hover:bg-red-950/30 rounded-lg transition-colors disabled:opacity-50"
-            >
-              End Session
             </button>
           </div>
 

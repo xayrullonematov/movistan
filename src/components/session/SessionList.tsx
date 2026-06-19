@@ -36,9 +36,6 @@ export default function SessionList({ sessions }: SessionListProps) {
     return null;
   }
 
-  const displaySessions = sessions.slice(0, 5);
-  const hasMore = sessions.length > 5;
-
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
@@ -64,7 +61,7 @@ export default function SessionList({ sessions }: SessionListProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
-            {displaySessions.map((session) => (
+            {sessions.map((session) => (
               <tr
                 key={session.id}
                 onClick={() => router.push(`/sessions/${session.id}`)}
@@ -89,17 +86,6 @@ export default function SessionList({ sessions }: SessionListProps) {
           </tbody>
         </table>
       </div>
-
-      {hasMore && (
-        <div className="text-center">
-          <button
-            onClick={() => router.push("/sessions")}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            View all sessions ({sessions.length})
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -76,7 +76,8 @@ export default function AgentArena({
         <svg
           viewBox="0 0 280 200"
           className="w-full h-auto max-h-[200px]"
-          aria-label="Agent communication visualization"
+          role="img"
+          aria-label="Agent communication visualization showing four AI engineers arranged in a diamond pattern with connection lines between critique pairs"
         >
           {/* Connection lines between critique pairs */}
           {critiquePairs.map(([a, b]) => {
@@ -132,7 +133,7 @@ export default function AgentArena({
             const isSpeaking = isAgentActive && isActive;
 
             return (
-              <g key={agent.id}>
+              <g key={agent.id} role="img" aria-label={`${agent.displayName} agent node${isSpeaking ? ", currently speaking" : ""}`}>
                 {/* Pulse ring when active */}
                 {isSpeaking && (
                   <circle
@@ -188,14 +189,25 @@ export default function AgentArena({
           return (
             <div
               key={agent.id}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isExpanded}
+              aria-label={`${agent.displayName} - ${status.label}. Click to ${isExpanded ? "collapse" : "expand"} details.`}
               className={`
                 border-l-2 rounded-lg bg-gray-800/50 border border-gray-700
                 transition-all duration-200 cursor-pointer hover:bg-gray-800
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-950
                 ${borderColors[agent.id]}
               `}
               onClick={() =>
                 setExpandedAgent(isExpanded ? null : agent.id)
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setExpandedAgent(isExpanded ? null : agent.id);
+                }
+              }}
             >
               <div className="flex items-center justify-between px-3 py-2">
                 {/* Left: dot + name */}
