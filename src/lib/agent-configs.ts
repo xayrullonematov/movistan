@@ -241,6 +241,15 @@ export const DEFAULT_MODEL_TIERS: ModelTierConfig = {
   summary: SUMMARY_TIER_MODEL,
 };
 
+/** Downgraded tiers used when remaining budget is thin */
+export const BUDGET_CONSTRAINED_TIERS: ModelTierConfig = {
+  proposal: CRITIQUE_TIER_MODEL,
+  critique: SUMMARY_TIER_MODEL,
+  revision: SUMMARY_TIER_MODEL,
+  consensus: CRITIQUE_TIER_MODEL,
+  summary: SUMMARY_TIER_MODEL,
+};
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================

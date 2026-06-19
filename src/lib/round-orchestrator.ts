@@ -21,7 +21,7 @@ import { tokenBudgetManager } from "@/lib/token-budget-manager";
 import { createAgentExecutor } from "@/lib/agent-executor";
 import { workspaceSummaryService } from "@/lib/workspace-summary-service";
 import { roundSummaryService } from "@/lib/round-summary-service";
-import { AGENT_CONFIGS, getCritiqueTarget } from "@/lib/agent-configs";
+import { AGENT_CONFIGS, getCritiqueTarget, BUDGET_CONSTRAINED_TIERS } from "@/lib/agent-configs";
 import { projectSessionState } from "@/lib/state-projector";
 import { prisma } from "@/lib/db";
 import type {
@@ -350,9 +350,14 @@ export const roundOrchestrator: RoundOrchestrator = {
       return { type: "budget-exceeded", usage };
     }
 
+    // Downgrade model tiers when budget is running low
+    const modelTiers = budgetStatus.warningThreshold
+      ? BUDGET_CONSTRAINED_TIERS
+      : undefined;
+
     // Assemble context for all agents
     const context = await contextAssembler.assembleContext(sessionId);
-    const agentExecutor = createAgentExecutor(sessionId, currentRound);
+    const agentExecutor = createAgentExecutor(sessionId, currentRound, modelTiers);
 
     let totalArtifactsCreated = 0;
     let totalArtifactsUpdated = 0;

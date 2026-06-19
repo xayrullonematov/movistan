@@ -144,8 +144,9 @@ async function callWithRetry<T>(params: {
  * The executor holds a reference to the sessionId so that token tracking
  * and context are scoped correctly per session.
  */
-export function createAgentExecutor(sessionId: string, round: number): AgentExecutor {
+export function createAgentExecutor(sessionId: string, round: number, modelTiers?: Partial<import("@/types/domain").ModelTierConfig>): AgentExecutor {
   const llmProvider = createLLMProvider();
+  const tiers = { ...DEFAULT_MODEL_TIERS, ...modelTiers };
 
   return {
     /**
@@ -157,7 +158,7 @@ export function createAgentExecutor(sessionId: string, round: number): AgentExec
       context: WorkspaceContext
     ): Promise<ProposalOutput> {
       const request = promptBuilder.buildProposalPrompt(agent, context);
-      const model = DEFAULT_MODEL_TIERS.proposal;
+      const model = tiers.proposal;
 
       return callWithRetry<ProposalOutput>({
         llmProvider,
@@ -185,7 +186,7 @@ export function createAgentExecutor(sessionId: string, round: number): AgentExec
     ): Promise<CritiqueOutput> {
       // For MVP, pass [proposal] as the proposals array
       const request = promptBuilder.buildCritiquePrompt(agent, [proposal], context);
-      const model = DEFAULT_MODEL_TIERS.critique;
+      const model = tiers.critique;
 
       return callWithRetry<CritiqueOutput>({
         llmProvider,
@@ -211,7 +212,7 @@ export function createAgentExecutor(sessionId: string, round: number): AgentExec
       context: WorkspaceContext
     ): Promise<RevisionOutput> {
       const request = promptBuilder.buildRevisionPrompt(agent, critiques, context);
-      const model = DEFAULT_MODEL_TIERS.revision;
+      const model = tiers.revision;
 
       return callWithRetry<RevisionOutput>({
         llmProvider,
@@ -234,7 +235,7 @@ export function createAgentExecutor(sessionId: string, round: number): AgentExec
       context: WorkspaceContext
     ): Promise<ConsensusOutput> {
       const request = promptBuilder.buildConsensusPrompt(roundEvents, context);
-      const model = DEFAULT_MODEL_TIERS.consensus;
+      const model = tiers.consensus;
 
       return callWithRetry<ConsensusOutput>({
         llmProvider,
