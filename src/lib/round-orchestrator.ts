@@ -250,6 +250,14 @@ export const roundOrchestrator: RoundOrchestrator = {
           transition.type === "paused-clarification" ||
           transition.type === "paused-budget"
         ) {
+          // Mark the session as paused so the UI / next-round routes know
+          // the round didn't complete. Without this, the session row keeps
+          // status="active" with the stage frozen at whichever stage just
+          // ran, which is the impossible "active mid-round" state.
+          await prisma.session.update({
+            where: { id: sessionId },
+            data: { status: "paused" },
+          });
           return; // Exit early, round paused
         }
 

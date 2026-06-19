@@ -53,7 +53,12 @@ function loadConfig(): LLMProviderConfig {
     defaultModel,
     modelTiers,
     defaultTemperature: 0.7,
-    defaultMaxTokens: 4096,
+    // Sized so a complete ProposalOutput (~7 artifacts, multi-paragraph
+    // content per artifact) fits in one call. 4096 was getting truncated,
+    // forcing the schema validator to re-prompt — each retry shipped the
+    // previous (long) response + error message back into the next call,
+    // which doubled the proposal-stage spend.
+    defaultMaxTokens: 12288,
   };
 }
 
@@ -476,9 +481,33 @@ function createBedrockProvider(config: LLMProviderConfig): LLMProvider {
     const temperature = request.temperature ?? config.defaultTemperature;
     const maxTokens = request.maxTokens ?? config.defaultMaxTokens;
 
+    // Prompt-cache strategy:
+    //  - If the prompt builder provided systemPromptStable +
+    //    systemPromptStageSpecific, emit two cachePoints: one after the
+    //    stable per-agent block (shared across proposal/critique/revision,
+    //    and across rounds), one after the full system (catches within-stage
+    //    retries). Anthropic on Bedrock requires the cached prefix to be
+    //    ≥ 1024 tokens for Sonnet / ≥ 2048 for Haiku — falls back to a
+    //    single cachePoint when only `systemPrompt` is set.
+    //  - First call writes cache at ~1.25× input cost; reads cost ~10%.
+    //    Net win after ≥ 1 reuse (retries, same agent in the next stage,
+    //    same agent in the next round).
+    const systemBlocks =
+      request.systemPromptStable && request.systemPromptStageSpecific
+        ? [
+            { text: request.systemPromptStable },
+            { cachePoint: { type: "default" as const } },
+            { text: request.systemPromptStageSpecific },
+            { cachePoint: { type: "default" as const } },
+          ]
+        : [
+            { text: request.systemPrompt },
+            { cachePoint: { type: "default" as const } },
+          ];
+
     const command = new ConverseCommand({
       modelId,
-      system: [{ text: request.systemPrompt }],
+      system: systemBlocks,
       messages: [
         { role: "user", content: [{ text: request.userMessage }] },
       ],
@@ -495,10 +524,21 @@ function createBedrockProvider(config: LLMProviderConfig): LLMProvider {
         .map((b) => ("text" in b && typeof b.text === "string" ? b.text : ""))
         .join("");
 
+      // Bedrock bills cache reads at ~10% of the full input rate and cache
+      // writes at ~125%. Counting them into inputTokens at full weight would
+      // make the budget guardrail and the cost estimate badly over-count once
+      // caching is doing its job. We weight them to their billing ratios so
+      // the single inputTokens number is a billable-equivalent.
+      const u = response.usage;
+      const inputTokens =
+        (u?.inputTokens ?? 0) +
+        Math.round((u?.cacheReadInputTokens ?? 0) * 0.1) +
+        Math.round((u?.cacheWriteInputTokens ?? 0) * 1.25);
+
       return {
         content,
-        inputTokens: response.usage?.inputTokens ?? 0,
-        outputTokens: response.usage?.outputTokens ?? 0,
+        inputTokens,
+        outputTokens: u?.outputTokens ?? 0,
         model: modelId,
       };
     } catch (error) {

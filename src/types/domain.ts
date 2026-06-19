@@ -466,6 +466,10 @@ export interface AgentConfig {
   objectiveFunction: string;
   evaluationCriteria: string[];
   conflictingPriorities: string[];
+  /** Concrete reasoning patterns the agent uses to evaluate proposals. */
+  reasoningPatterns?: string[];
+  /** Failure modes this agent should actively guard against. */
+  pitfallsToAvoid?: string[];
 }
 
 /** Critique routing - opposing pairs for focused cross-discipline tension */
@@ -479,11 +483,31 @@ export interface CritiqueRouting {
 
 /** Request to the LLM provider */
 export interface LLMRequest {
+  /**
+   * Full system prompt. For the OpenAI-compatible path this is what's sent
+   * verbatim. For the Bedrock path it's used as a fallback when
+   * `systemPromptStable` is not provided.
+   */
   systemPrompt: string;
   userMessage: string;
   temperature?: number;
   maxTokens?: number;
   responseFormat?: "json";
+  /**
+   * Optional structured split: the portion of the system prompt that is
+   * identical across all stages for a given agent (identity + objective +
+   * criteria + reasoning patterns). When set together with `systemPromptStageSpecific`,
+   * the Bedrock provider inserts a cachePoint at the boundary so the per-agent
+   * block caches across proposal → critique → revision, not just across
+   * within-stage retries. The OpenAI path is unaffected — it just uses
+   * `systemPrompt`, which the prompt builder still populates as the concatenation.
+   */
+  systemPromptStable?: string;
+  /**
+   * The stage-specific tail of the system prompt (schema description, JSON
+   * instruction, stance options for revision, etc.).
+   */
+  systemPromptStageSpecific?: string;
 }
 
 /** Response from the LLM provider */

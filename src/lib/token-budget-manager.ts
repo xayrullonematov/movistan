@@ -26,6 +26,7 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
+  // OpenAI
   "gpt-4o": {
     inputPricePerMillion: 2.5,
     outputPricePerMillion: 10.0,
@@ -34,12 +35,31 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
     inputPricePerMillion: 0.15,
     outputPricePerMillion: 0.6,
   },
+  // AWS Bedrock — Anthropic (per Anthropic published Sonnet 4 / Haiku 4 rates).
+  // Cached input would be ~10% of these; the executor currently sums cache
+  // reads into inputTokens so we under-bill rather than over-bill, which is
+  // safe for the budget guardrail.
+  "anthropic.claude-sonnet-4-6": {
+    inputPricePerMillion: 3.0,
+    outputPricePerMillion: 15.0,
+  },
+  "anthropic.claude-haiku-4-5-20251001-v1:0": {
+    inputPricePerMillion: 0.8,
+    outputPricePerMillion: 4.0,
+  },
 };
 
 const DEFAULT_MODEL = "gpt-4o";
 
+/**
+ * Look up pricing for a model. Bedrock inference profile IDs (us./global.
+ * prefixed) charge at the same rate as the bare model ID, so strip the
+ * region prefix before lookup.
+ */
 function getPricing(model: string): ModelPricing {
-  return MODEL_PRICING[model] ?? MODEL_PRICING[DEFAULT_MODEL];
+  if (MODEL_PRICING[model]) return MODEL_PRICING[model];
+  const stripped = model.replace(/^(us|eu|apac|global)\./, "");
+  return MODEL_PRICING[stripped] ?? MODEL_PRICING[DEFAULT_MODEL];
 }
 
 function calculateCost(

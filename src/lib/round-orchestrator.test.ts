@@ -85,8 +85,14 @@ const CRITIQUE_TARGET: Record<AgentId, AgentId> = {
 function detectStage(systemPrompt: string): DebateStage {
   // Order matters: each stage's schema has at least one unique literal
   // string, so we discriminate by checking the most-specific ones first.
+  // The shared preamble mentions every stage name and even some schema
+  // hints, so the discriminators must be tokens that ONLY appear in their
+  // stage's schema description (not in the preamble or other stages):
+  //   - consensus  → "overallConfidence" (only in consensus schema)
+  //   - revision   → "concededPoints"    (only in revision schema)
+  //   - critique   → "targetAgentId"     (only in critique schema)
   if (systemPrompt.includes("overallConfidence")) return "consensus";
-  if (systemPrompt.includes("partially-concede")) return "revision";
+  if (systemPrompt.includes("concededPoints")) return "revision";
   if (systemPrompt.includes("targetAgentId")) return "critique";
   return "proposal";
 }
