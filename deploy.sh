@@ -40,7 +40,8 @@ docker compose up -d
 
 # Initialize database
 echo "🗄️  Initializing database..."
-docker compose exec app npx prisma db push --skip-generate 2>/dev/null || true
+sleep 3
+sudo DATABASE_URL="file:/var/lib/docker/volumes/movistan_app-data/_data/production.db" env "PATH=$PATH" npx prisma db push 2>/dev/null || echo "   (DB already initialized)"
 
 echo ""
 echo "✅ Deployed successfully!"

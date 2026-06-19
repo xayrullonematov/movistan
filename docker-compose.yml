@@ -2,14 +2,15 @@ services:
   app:
     build: .
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:3000:3000"
+    expose:
+      - "3000"
     env_file: .env
     volumes:
       - app-data:/app/data
       - app-exports:/app/.movistan/exports
     environment:
       - DATABASE_URL=file:./data/production.db
+      - HOSTNAME=0.0.0.0
 
   nginx:
     image: nginx:alpine
