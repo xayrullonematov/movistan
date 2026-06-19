@@ -158,6 +158,7 @@ function handleRoundStarted(
 function handleRoundCompleted(state: SessionState): SessionState {
   return {
     ...state,
+    status: "active",
     currentStage: "awaiting-intervention",
     agents: state.agents.map((agent) => ({
       ...agent,
