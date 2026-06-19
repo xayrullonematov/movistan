@@ -13,6 +13,27 @@
   --success: #22c55e;
   --warning: #eab308;
   --danger: #ef4444;
+
+  /* Design system color palette */
+  --surface: #111827;
+  --surface-elevated: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  /* Agent colors */
+  --agent-senior: #3b82f6;
+  --agent-security: #ef4444;
+  --agent-performance: #f59e0b;
+  --agent-product: #8b5cf6;
+
+  /* Artifact type colors */
+  --artifact-decision: #22c55e;
+  --artifact-risk: #ef4444;
+  --artifact-assumption: #f59e0b;
+  --artifact-tradeoff: #8b5cf6;
+  --artifact-open-question: #06b6d4;
+  --artifact-recommendation: #3b82f6;
 }
 
 @theme inline {
@@ -29,6 +50,27 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --font-sans: var(--font-inter);
+
+  /* Design system surfaces */
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Agent colors */
+  --color-agent-senior: var(--agent-senior);
+  --color-agent-security: var(--agent-security);
+  --color-agent-performance: var(--agent-performance);
+  --color-agent-product: var(--agent-product);
+
+  /* Artifact type colors */
+  --color-artifact-decision: var(--artifact-decision);
+  --color-artifact-risk: var(--artifact-risk);
+  --color-artifact-assumption: var(--artifact-assumption);
+  --color-artifact-tradeoff: var(--artifact-tradeoff);
+  --color-artifact-open-question: var(--artifact-open-question);
+  --color-artifact-recommendation: var(--artifact-recommendation);
 }
 
 body {
@@ -123,4 +165,37 @@ body {
 
 .prose-dark strong {
   color: #f9fafb;
+}
+
+/* Design system keyframe animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50% { box-shadow: 0 0 20px 4px currentColor; }
+}
+
+@keyframes flow-dash {
+  to { stroke-dashoffset: -20; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Accessibility: respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

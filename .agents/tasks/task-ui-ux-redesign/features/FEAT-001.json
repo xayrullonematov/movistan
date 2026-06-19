@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Install dependencies (framer-motion, lucide-react) and update globals.css with the design system foundation - keyframe animations, refined CSS variables, and agent/artifact color tokens.",
+  "status": "in_progress",
+  "steps": [
+    "Run: npm install framer-motion lucide-react",
+    "Update src/app/globals.css to add the 4 CSS keyframe animations specified in design.md: pulse-glow, flow-dash, gradient-shift, breathe",
+    "Add agent color CSS variables to :root in globals.css: --agent-senior (#3b82f6), --agent-security (#ef4444), --agent-performance (#f59e0b), --agent-product (#8b5cf6)",
+    "Add artifact type color CSS variables: --artifact-decision (#22c55e), --artifact-risk (#ef4444), --artifact-assumption (#f59e0b), --artifact-tradeoff (#8b5cf6), --artifact-open-question (#06b6d4), --artifact-recommendation (#3b82f6)",
+    "Add the refined color palette variables from design.md: Background #030712, Surface #111827, Surface-elevated #1f2937, Border #374151, Text-primary #f9fafb, Text-secondary #9ca3af, Text-muted #6b7280",
+    "Add prefers-reduced-motion media query that disables all animations",
+    "Update the @theme inline block to include the new agent and artifact color tokens so they work with Tailwind 4"
+  ],
+  "acceptance_criteria": [
+    "framer-motion and lucide-react are in package.json dependencies",
+    "globals.css contains all 4 keyframe animations (pulse-glow, flow-dash, gradient-shift, breathe)",
+    "globals.css contains agent color variables and artifact type color variables",
+    "A prefers-reduced-motion media query is present that disables animations",
+    "npm run build succeeds without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
