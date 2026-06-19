@@ -7,9 +7,10 @@ import ArtifactDetail from "./ArtifactDetail";
 interface ArtifactCardProps {
   artifact: ArtifactState;
   sessionId: string;
+  onStatusChange?: () => void;
 }
 
-export default function ArtifactCard({ artifact, sessionId }: ArtifactCardProps) {
+export default function ArtifactCard({ artifact, sessionId, onStatusChange }: ArtifactCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const statusColors = {
@@ -60,6 +61,7 @@ export default function ArtifactCard({ artifact, sessionId }: ArtifactCardProps)
           artifact={artifact}
           sessionId={sessionId}
           onClose={() => setExpanded(false)}
+          onStatusChange={onStatusChange}
         />
       )}
     </>

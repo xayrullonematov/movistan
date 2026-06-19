@@ -38,10 +38,11 @@ export default function SharedWorkspace({ session }: SharedWorkspaceProps) {
             {session.constraints.map((c) => (
               <span
                 key={c.id}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded"
+                className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded max-w-[280px]"
+                title={c.text}
               >
                 <CategoryDot category={c.category} />
-                <span className="text-gray-300">{c.text}</span>
+                <span className="text-gray-300 truncate">{c.text}</span>
               </span>
             ))}
           </div>

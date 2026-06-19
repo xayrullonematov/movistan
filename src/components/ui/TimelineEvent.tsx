@@ -6,6 +6,13 @@ interface TimelineEventProps {
   event: PersistedEvent;
 }
 
+const AGENT_NAMES: Record<string, string> = {
+  "senior-engineer": "Senior Eng",
+  "security-engineer": "Security Eng",
+  "performance-engineer": "Perf Eng",
+  "product-engineer": "Product Eng",
+};
+
 export default function TimelineEvent({ event }: TimelineEventProps) {
   const typeColors: Record<string, string> = {
     proposal: "border-blue-600 bg-blue-900/20",
@@ -42,15 +49,15 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
   return (
     <div className={`border-l-2 pl-2 py-1 ${colorClass} rounded-r`}>
       <div className="flex items-center gap-1.5">
-        <span className={`px-1 py-0.5 text-[10px] rounded ${badgeClass}`}>
+        <span className={`px-1 py-0.5 text-xs rounded ${badgeClass}`}>
           {event.type.replace("-", " ")}
         </span>
         {event.agentId && (
-          <span className="text-[10px] text-gray-500">{event.agentId}</span>
+          <span className="text-xs text-gray-500">{AGENT_NAMES[event.agentId] || event.agentId}</span>
         )}
       </div>
-      <p className="text-[11px] text-gray-300 mt-0.5 line-clamp-2">{summary.slice(0, 100)}</p>
-      <p className="text-[10px] text-gray-600 mt-0.5">
+      <p className="text-xs text-gray-300 mt-0.5 line-clamp-2">{summary.slice(0, 100)}</p>
+      <p className="text-xs text-gray-600 mt-0.5">
         {new Date(event.timestamp).toLocaleTimeString()}
       </p>
     </div>

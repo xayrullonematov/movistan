@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { SessionTokenUsage } from "@/types/domain";
 
 interface TokenUsageBadgeProps {
@@ -9,13 +9,25 @@ interface TokenUsageBadgeProps {
 
 export default function TokenUsageBadge({ usage }: TokenUsageBadgeProps) {
   const [showDetail, setShowDetail] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDetail) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setShowDetail(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showDetail]);
 
   if (usage.estimatedCostUsd === 0 && usage.totalInputTokens === 0) {
     return null;
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setShowDetail(!showDetail)}
         className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 font-mono"

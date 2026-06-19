@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -56,13 +56,7 @@ export default function ResultsPage({ params }: { params: Promise<{ sessionId: s
             <span>Cost: ${session.estimatedCostUsd?.toFixed(4) ?? "—"}</span>
           </div>
         </div>
-        <a
-          href={`/api/sessions/${sessionId}/results/markdown`}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
-          download
-        >
-          Download Markdown
-        </a>
+        <DownloadButton sessionId={sessionId} />
       </div>
 
       {/* Consensus confidence */}
@@ -93,5 +87,37 @@ export default function ResultsPage({ params }: { params: Promise<{ sessionId: s
         )
       )}
     </div>
+  );
+}
+
+function DownloadButton({ sessionId }: { sessionId: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "done">("idle");
+
+  const handleDownload = async () => {
+    setState("loading");
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/results/markdown`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] || "results.md";
+      a.click();
+      URL.revokeObjectURL(url);
+      setState("done");
+      setTimeout(() => setState("idle"), 2000);
+    } catch {
+      setState("idle");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={state === "loading"}
+      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded text-sm font-medium"
+    >
+      {state === "loading" ? "Downloading..." : state === "done" ? "✓ Downloaded" : "Download Markdown"}
+    </button>
   );
 }

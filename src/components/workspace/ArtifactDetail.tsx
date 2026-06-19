@@ -8,9 +8,10 @@ interface ArtifactDetailProps {
   artifact: ArtifactState;
   sessionId: string;
   onClose: () => void;
+  onStatusChange?: () => void;
 }
 
-export default function ArtifactDetail({ artifact, sessionId, onClose }: ArtifactDetailProps) {
+export default function ArtifactDetail({ artifact, sessionId, onClose, onStatusChange }: ArtifactDetailProps) {
   const [versions, setVersions] = useState<ArtifactVersion[] | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -40,6 +41,7 @@ export default function ArtifactDetail({ artifact, sessionId, onClose }: Artifac
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      onStatusChange?.();
     } finally {
       setIsUpdating(false);
     }

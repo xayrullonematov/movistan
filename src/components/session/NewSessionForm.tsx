@@ -71,6 +71,9 @@ export default function NewSessionForm() {
           className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
           required
         />
+        <p className="text-xs text-gray-500 mt-1">
+          {problemDescription.length}/2000 — Be specific: include context, constraints, and what a good outcome looks like.
+        </p>
       </div>
 
       <div>

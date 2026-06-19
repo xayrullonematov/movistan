@@ -6,7 +6,7 @@ import WorkspaceLayout from "@/components/workspace/WorkspaceLayout";
 
 export default function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
-  const { session, isLoading, error } = useSession(sessionId);
+  const { session, isLoading, error, mutate } = useSession(sessionId);
 
   if (isLoading) {
     return (
@@ -27,5 +27,5 @@ export default function SessionPage({ params }: { params: Promise<{ sessionId: s
     );
   }
 
-  return <WorkspaceLayout session={session} />;
+  return <WorkspaceLayout session={session} mutate={mutate} />;
 }

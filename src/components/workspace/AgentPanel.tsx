@@ -8,9 +8,10 @@ import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface AgentPanelProps {
   agent: AgentState;
+  isRoundActive?: boolean;
 }
 
-export default function AgentPanel({ agent }: AgentPanelProps) {
+export default function AgentPanel({ agent, isRoundActive }: AgentPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -29,7 +30,7 @@ export default function AgentPanel({ agent }: AgentPanelProps) {
             <ConfidenceBadge confidence={agent.confidence} />
             {agent.hasCompletedCurrentStage ? (
               <span className="text-xs text-green-400">Complete ✓</span>
-            ) : agent.currentStance !== null || agent.confidence !== null ? (
+            ) : isRoundActive ? (
               <span className="text-xs text-yellow-400 animate-pulse">Thinking...</span>
             ) : null}
           </div>

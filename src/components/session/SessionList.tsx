@@ -44,6 +44,17 @@ export default function SessionList({ sessions }: SessionListProps) {
             <span>Round {session.currentRound}</span>
             <span>•</span>
             <span>{new Date(session.createdAt).toLocaleDateString()}</span>
+            {session.status === "completed" && (
+              <>
+                <span>•</span>
+                <span
+                  onClick={(e) => { e.stopPropagation(); router.push(`/sessions/${session.id}/results`); }}
+                  className="text-blue-400 hover:text-blue-300 cursor-pointer"
+                >
+                  View Results
+                </span>
+              </>
+            )}
           </div>
         </button>
       ))}

@@ -14,9 +14,10 @@ import TokenUsageBadge from "@/components/ui/TokenUsageBadge";
 
 interface WorkspaceLayoutProps {
   session: SessionState;
+  mutate?: () => void;
 }
 
-export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
+export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProps) {
   const router = useRouter();
   const [secondaryOpen, setSecondaryOpen] = useState(true);
   const [tertiaryOpen, setTertiaryOpen] = useState(true);
@@ -33,6 +34,7 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
   };
 
   const handleEndSession = async () => {
+    if (!window.confirm("End this session? This cannot be undone.")) return;
     await fetch(`/api/sessions/${session.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -49,7 +51,7 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `session-${session.id}.json`;
+        a.download = `session-${session.id}.md`;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -99,11 +101,32 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
       }}>
         {/* Primary Panel (60%) */}
         <div className="overflow-y-auto border-r border-gray-800 p-4 space-y-6">
+          {/* Round in progress banner */}
+          {session.currentStage && session.currentStage !== "awaiting-intervention" && (
+            <div className="p-4 border border-blue-700/50 rounded-lg bg-blue-900/10 flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
+              <div>
+                <p className="text-sm font-medium text-blue-200">Round {session.currentRound} in progress</p>
+                <p className="text-xs text-blue-400 capitalize">Stage: {session.currentStage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state for fresh sessions */}
+          {session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage && (
+            <div className="p-6 border border-dashed border-gray-600 rounded-lg text-center">
+              <p className="text-gray-300 font-medium mb-1">Ready to start</p>
+              <p className="text-sm text-gray-500 mb-4">
+                Click &quot;Start Round&quot; below to begin the multi-agent debate. Four AI engineers will analyze your problem and produce artifacts.
+              </p>
+            </div>
+          )}
+
           <SharedWorkspace session={session} />
           {session.currentStage === "awaiting-intervention" && (
             <InterventionPanel sessionId={session.id} />
           )}
-          <ArtifactsPanel artifacts={session.artifacts} sessionId={session.id} />
+          <ArtifactsPanel artifacts={session.artifacts} sessionId={session.id} onStatusChange={mutate} />
           <EngineeringOutcomesPanel artifacts={session.artifacts} />
           <ConsensusDashboard consensus={session.consensus} />
         </div>
@@ -113,7 +136,7 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
           <div className="overflow-y-auto border-r border-gray-800 p-4 space-y-4">
             <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Agents</h2>
             {session.agents.map((agent) => (
-              <AgentPanel key={agent.id} agent={agent} />
+              <AgentPanel key={agent.id} agent={agent} isRoundActive={!!session.currentStage && session.currentStage !== "awaiting-intervention"} />
             ))}
           </div>
         )}
@@ -131,7 +154,7 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleStartRound}
-            disabled={isStartingRound || session.status !== "active" || session.currentStage !== null}
+            disabled={isStartingRound || session.status !== "active" || (session.currentStage !== null && session.currentStage !== "awaiting-intervention")}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg transition-colors"
           >
             {isStartingRound ? "Starting..." : "Start Round"}
@@ -150,6 +173,14 @@ export default function WorkspaceLayout({ session }: WorkspaceLayoutProps) {
           >
             {isExporting ? "Exporting..." : "Export"}
           </button>
+          {session.currentRound > 0 && (
+            <button
+              onClick={() => router.push(`/sessions/${session.id}/results`)}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-lg transition-colors"
+            >
+              View Results
+            </button>
+          )}
         </div>
         <div className="text-xs text-gray-500">
           {session.tokenUsage.estimatedCostUsd > 0 && (

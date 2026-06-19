@@ -6,9 +6,10 @@ import ArtifactCard from "./ArtifactCard";
 interface ArtifactsPanelProps {
   artifacts: ArtifactState[];
   sessionId: string;
+  onStatusChange?: () => void;
 }
 
-export default function ArtifactsPanel({ artifacts, sessionId }: ArtifactsPanelProps) {
+export default function ArtifactsPanel({ artifacts, sessionId, onStatusChange }: ArtifactsPanelProps) {
   return (
     <div>
       <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">
@@ -23,7 +24,7 @@ export default function ArtifactsPanel({ artifacts, sessionId }: ArtifactsPanelP
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {artifacts.map((artifact) => (
-            <ArtifactCard key={artifact.id} artifact={artifact} sessionId={sessionId} />
+            <ArtifactCard key={artifact.id} artifact={artifact} sessionId={sessionId} onStatusChange={onStatusChange} />
           ))}
         </div>
       )}

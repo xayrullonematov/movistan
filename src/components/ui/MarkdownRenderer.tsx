@@ -10,7 +10,9 @@ interface MarkdownRendererProps {
  * For a production app, use a proper markdown library.
  */
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  // Simple markdown-to-HTML conversion for MVP
+  if (!content) return null;
+  // HTML is escaped first (step 1-3 in simpleMarkdownToHtml), then markdown
+  // syntax is converted to known-safe tags. This prevents XSS from content.
   const html = simpleMarkdownToHtml(content);
 
   return (

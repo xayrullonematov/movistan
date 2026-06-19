@@ -14,11 +14,7 @@ export default function RoundProgressIndicator({ currentStage }: RoundProgressIn
   return (
     <div className="p-2 border border-gray-700 rounded-lg bg-gray-900/30">
       {currentStage ? (
-        <>
-          <p className="text-[10px] text-gray-500 mb-1.5 uppercase">
-            Stage: {currentStage}
-          </p>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             {STAGES.map((stage, i) => {
               const isComplete = i < currentIndex;
               const isCurrent = i === currentIndex;
@@ -37,16 +33,15 @@ export default function RoundProgressIndicator({ currentStage }: RoundProgressIn
                         : "border border-gray-600"
                     }`}
                   />
-                  <span className={`text-[9px] ${isCurrent ? "text-gray-300" : "text-gray-600"}`}>
+                  <span className={`text-xs ${isCurrent ? "text-gray-300" : "text-gray-600"}`}>
                     {stage.slice(0, 4)}
                   </span>
                 </div>
               );
             })}
           </div>
-        </>
       ) : (
-        <p className="text-[10px] text-gray-500 text-center">Idle — no active stage</p>
+        <p className="text-xs text-gray-500 text-center">Idle — no active stage</p>
       )}
     </div>
   );

@@ -28,10 +28,10 @@ export default function DebateTimeline({ sessionId, currentRound, currentStage }
         <p className="text-xs text-gray-500">No events yet.</p>
       ) : (
         <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
-          {events.map((event, i) => {
-            const prevEvent = events[i - 1];
+          {[...events].reverse().map((event, i, arr) => {
+            const nextEvent = arr[i + 1];
             const showStageMarker =
-              prevEvent && prevEvent.stage !== event.stage;
+              nextEvent && nextEvent.stage !== event.stage;
 
             return (
               <div key={event.id}>
