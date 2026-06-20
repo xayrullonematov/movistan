@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import AgentAvatar from "./AgentAvatar";
 import type {
   AgentType,
@@ -245,6 +246,7 @@ export default function DebateMessage({
   timestamp,
   targetAgent,
 }: DebateMessageProps) {
+  const [expanded, setExpanded] = useState(false);
   const parsed = parseContent(content);
   const formattedTime = new Date(timestamp).toLocaleTimeString([], {
     hour: "2-digit",
@@ -256,6 +258,11 @@ export default function DebateMessage({
       ? `Critique of ${agentDisplayNames[targetAgent]}`
       : headerLabels[type];
 
+  // Derive one-line summary for collapsed view
+  const summary = parsed && typeof parsed === "object" && "summary" in (parsed as Record<string, unknown>)
+    ? (parsed as { summary?: string }).summary || content.slice(0, 100)
+    : content.slice(0, 100);
+
   return (
     <div className="flex gap-3 group">
       {/* Left: Avatar */}
@@ -265,47 +272,75 @@ export default function DebateMessage({
 
       {/* Right: Content card */}
       <div className="flex-1 min-w-0">
-        {/* Agent name + timestamp */}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-gray-200">
-            {agentDisplayNames[agent]}
-          </span>
-          <span className="text-[10px] text-gray-500">{formattedTime}</span>
-        </div>
-
-        {/* Message card */}
+        {/* Clickable header for expand/collapse */}
         <div
-          className={`
-            border-l-2 rounded-lg bg-gray-800/60 p-3
-            ${borderColors[type]}
-            ${type === "consensus" ? "bg-amber-500/5 border border-amber-500/20" : "border border-gray-700/50"}
-          `}
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={`${agentDisplayNames[agent]} ${headerLabel}. ${expanded ? "Click to collapse" : "Click to expand"}.`}
+          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-950 rounded-lg"
+          onClick={() => setExpanded(!expanded)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setExpanded(!expanded);
+            }
+          }}
         >
-          {/* Type header */}
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className={`text-[10px] uppercase font-semibold tracking-wider ${headerTextColors[type]}`}
-            >
+          {/* Agent name + timestamp */}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium text-gray-200">
+              {agentDisplayNames[agent]}
+            </span>
+            <span className={`text-[10px] uppercase font-semibold tracking-wider ${headerTextColors[type]}`}>
               {headerLabel}
             </span>
+            <span className="text-[10px] text-gray-500">{formattedTime}</span>
+            <svg
+              className={`w-3.5 h-3.5 text-gray-500 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
 
-          {/* Structured content */}
-          {type === "proposal" && parsed ? (
-            <ProposalContent data={parsed as ProposalOutput} />
-          ) : type === "critique" && parsed ? (
-            <CritiqueContent
-              data={parsed as CritiqueOutput}
-              targetAgent={targetAgent}
-            />
-          ) : type === "revision" && parsed ? (
-            <RevisionContent data={parsed as RevisionOutput} />
-          ) : type === "consensus" && parsed ? (
-            <ConsensusContent data={parsed as ConsensusOutput} />
-          ) : (
-            <FallbackContent content={content} />
+          {/* Collapsed: one-line summary */}
+          {!expanded && (
+            <p className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
+              {summary}
+            </p>
           )}
         </div>
+
+        {/* Expanded: full message card */}
+        {expanded && (
+          <div
+            className={`
+              border-l-2 rounded-lg bg-gray-800/60 p-3 mt-1
+              ${borderColors[type]}
+              ${type === "consensus" ? "bg-amber-500/5 border border-amber-500/20" : "border border-gray-700/50"}
+            `}
+          >
+            {/* Structured content */}
+            {type === "proposal" && parsed ? (
+              <ProposalContent data={parsed as ProposalOutput} />
+            ) : type === "critique" && parsed ? (
+              <CritiqueContent
+                data={parsed as CritiqueOutput}
+                targetAgent={targetAgent}
+              />
+            ) : type === "revision" && parsed ? (
+              <RevisionContent data={parsed as RevisionOutput} />
+            ) : type === "consensus" && parsed ? (
+              <ConsensusContent data={parsed as ConsensusOutput} />
+            ) : (
+              <FallbackContent content={content} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

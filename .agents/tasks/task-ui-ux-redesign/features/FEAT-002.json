@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement all 6 P2DESIGN.md UI/UX tasks: (1) Headline/TL;DR on Results screen, (2) Tool-call trace visibility, (3) Artifacts tab default filters, (4) Collapse debate messages by default, (5) Cap Key Decisions/Risk Register to top 3-5, (6) Cleanup dead components and fix AgentDiagram icons.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "TASK 1 - ResultsDashboard headline: In src/components/workspace/ResultsDashboard.tsx, add a one-line recommendation headline at the very top of the results view (above the ConsensusMeter). Derive it from session.consensus data - show the top recommended decision with its confidence percentage. Example format: 'Recommendation: [title] - confidence X%'. If no recommendedDecisions exist, fall back to showing the overall confidence level.",
     "TASK 2 - ToolCallTrace component: Create src/components/workspace/ToolCallTrace.tsx. This component renders a table showing agent name, files read, call count, and cap-hit status. Source the data from stage-progress events in the event stream - these events already carry { toolCallCount, capHit, filesRead } when groundedByRepo is true. Accept events as a prop (from DebateChat or the workspace). During proposal stage, show a 'live' version (e.g., 'Security agent is reading middleware.ts...'). After the round completes, show a static summary table. Integrate this into WorkspaceLayout - add it as a collapsible section within the Debate tab or as a sub-section visible during/after the proposal stage in DebateChat.tsx.",

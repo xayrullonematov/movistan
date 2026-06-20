@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { RoundStage, PersistedEvent, AgentType } from "@/types/domain";
 import { useEventStream } from "@/hooks/useEventStream";
 import DebateMessage from "./DebateMessage";
+import ToolCallTrace from "./ToolCallTrace";
 
 interface DebateChatProps {
   sessionId: string;
@@ -171,6 +172,9 @@ export default function DebateChat({
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Tool Call Trace - shows tool usage from stage-progress events */}
+        <ToolCallTrace events={events} currentStage={currentStage} />
+
         <AnimatePresence mode="popLayout">
           {groupedEvents.map((group, groupIdx) => (
             <div key={`${group.stage}-${groupIdx}`}>
