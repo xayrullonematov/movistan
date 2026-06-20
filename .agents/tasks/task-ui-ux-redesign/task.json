@@ -1,0 +1,7 @@
+{
+  "task_id": "task-ui-ux-redesign",
+  "task_description": "Implement all UI/UX improvements from P2DESIGN.md: headline on results, tool-call trace visibility, artifacts default filters, collapsed debate messages, capped lists with expanders, cleanup dead components, fix AgentDiagram icons.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

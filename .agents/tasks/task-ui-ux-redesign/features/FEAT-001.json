@@ -1,27 +1,24 @@
 {
   "id": "FEAT-001",
   "type": "chore",
-  "description": "Install dependencies (framer-motion, lucide-react) and update globals.css with the design system foundation - keyframe animations, refined CSS variables, and agent/artifact color tokens.",
+  "description": "Install dependencies and verify the build and existing tests pass before making any code changes.",
   "status": "completed",
   "steps": [
-    "Run: npm install framer-motion lucide-react",
-    "Update src/app/globals.css to add the 4 CSS keyframe animations specified in design.md: pulse-glow, flow-dash, gradient-shift, breathe",
-    "Add agent color CSS variables to :root in globals.css: --agent-senior (#3b82f6), --agent-security (#ef4444), --agent-performance (#f59e0b), --agent-product (#8b5cf6)",
-    "Add artifact type color CSS variables: --artifact-decision (#22c55e), --artifact-risk (#ef4444), --artifact-assumption (#f59e0b), --artifact-tradeoff (#8b5cf6), --artifact-open-question (#06b6d4), --artifact-recommendation (#3b82f6)",
-    "Add the refined color palette variables from design.md: Background #030712, Surface #111827, Surface-elevated #1f2937, Border #374151, Text-primary #f9fafb, Text-secondary #9ca3af, Text-muted #6b7280",
-    "Add prefers-reduced-motion media query that disables all animations",
-    "Update the @theme inline block to include the new agent and artifact color tokens so they work with Tailwind 4"
+    "Run npm install in /projects/sandbox/movistan to install all dependencies",
+    "Run npx prisma generate to generate the Prisma client",
+    "Run npm run build to confirm the project compiles without errors",
+    "Run npm run test to confirm existing tests pass (note: tests require database, some may be skipped if no DB)",
+    "Run npm run lint to confirm no existing lint errors"
   ],
   "acceptance_criteria": [
-    "framer-motion and lucide-react are in package.json dependencies",
-    "globals.css contains all 4 keyframe animations (pulse-glow, flow-dash, gradient-shift, breathe)",
-    "globals.css contains agent color variables and artifact type color variables",
-    "A prefers-reduced-motion media query is present that disables animations",
-    "npm run build succeeds without errors"
+    "npm install completes without errors",
+    "npm run build completes successfully",
+    "npm run lint reports no errors (warnings acceptable)"
   ],
   "verification": [
-    "npm run build"
+    "npm run build exits with code 0",
+    "npm run lint exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": "Prisma client generation (npx prisma generate) is required before build succeeds - not related to this feature but needed for verification. Pre-existing lint errors (33 issues) exist in test files and lib files - none introduced by this change."
+  "findings": "npm install, prisma generate, build (next build), and lint all pass successfully. Tests: 74/89 pass, 15 fail across 5 test files (database-stores, round-orchestrator, crash-recovery, artifact-provenance, summary-services). All failures are pre-existing SQLite database lock timeouts (SQLITE_BUSY: database is locked / SocketTimeout) - the production.db file is locked and tests cannot write to it. This is an environment constraint, not a code issue. Non-DB tests (agent-tool-loop, state-projector, prompt-builder, context-assembler, output-validator, github-fetcher, repo-file-selector) all pass."
 }
