@@ -69,7 +69,7 @@ const CONSENSUS_SCHEMA_DESC = `{
   "identifiedRisks": [{"description": "string", "severity": "high|medium|low", "raisedBy": ["agent-id"]}],
   "openQuestions": ["string"],
   "overallConfidence": number (0-1),
-  "artifactOperations": [{"operation": "create|update|accept|reject", "artifactId": "string (optional)", "type": "string (optional)", "title": "string", "content": "string", "sourceEventId": "string (optional)"}]
+  "artifactOperations": [{"operation": "create|update|accept|reject", "artifactId": "string (required for update/accept/reject)", "type": "string (optional, for create only)", "title": "string", "content": "string (required for create/update; omit for accept/reject)", "sourceEventId": "string (optional)"}]
 }`;
 
 
@@ -508,12 +508,19 @@ export class PromptBuilderImpl implements IPromptBuilder {
       `Analyze all proposals, critiques, and revisions from the current`,
       `round to synthesize areas of agreement and disagreement.`,
       ``,
+      `## Agent IDs (use EXACTLY these strings in agentId / supportingAgents / raisedBy fields)`,
+      `- "senior-engineer"`,
+      `- "security-engineer"`,
+      `- "performance-engineer"`,
+      `- "product-engineer"`,
+      ``,
       `## Important`,
-      `- Include event IDs in evidenceChain arrays to link back to source events`,
+      `- Use the exact event "id" strings from the event data in evidenceChain arrays`,
       `- Identify all areas of agreement and disagreement`,
       `- Recommend concrete decisions based on the debate`,
       `- Flag identified risks with the agents who raised them`,
       `- List any open questions that remain unresolved`,
+      `- For artifactOperations: "content" is required for "create" and "update" only — omit it for "accept" and "reject"`,
       ``,
       `## Output Schema`,
       CONSENSUS_SCHEMA_DESC,

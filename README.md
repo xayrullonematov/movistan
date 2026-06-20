@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Hackathon Submission
+
+This project is submitted to the **Qwen Cloud Global AI Hackathon** under **Track 3 — Agent Society** (Multi-Agent Swarm Collaboration). Four LLM agents (`senior-engineer`, `security-engineer`, `performance-engineer`, `product-engineer`), each with a distinct objective function, partition tasks and negotiate through structured proposal → critique → revision → consensus rounds to produce engineering artifacts.
+
+The LLM layer talks to Qwen via the OpenAI-compatible DashScope endpoint — see `.env.example` for the configuration. Licensed under the MIT License; see `LICENSE`.
+
 ## Getting Started
 
 First, run the development server:

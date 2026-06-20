@@ -25,7 +25,164 @@ import type {
   LLMResponse,
   LLMProviderConfig,
   ModelTierConfig,
+  ToolCallRequest,
 } from "@/types/domain";
+
+// =============================================================================
+// REQUEST BUILDERS (shared between cancellable + non-cancellable providers)
+// =============================================================================
+
+type OpenAIMessage =
+  | { role: "system" | "user"; content: string }
+  | {
+      role: "assistant";
+      content: string | null;
+      tool_calls?: Array<{
+        id: string;
+        type: "function";
+        function: { name: string; arguments: string };
+      }>;
+    }
+  | {
+      role: "tool";
+      content: string;
+      tool_call_id: string;
+      name?: string;
+    };
+
+/**
+ * Build the OpenAI-compatible request body. When tools are provided, the
+ * `response_format: json_object` flag is intentionally suppressed so the
+ * model can emit `tool_calls`. JSON-schema enforcement happens on the final
+ * non-tool response inside the tool-call loop.
+ */
+function buildOpenAIBody(
+  request: LLMRequest,
+  model: string,
+  temperature: number,
+  maxTokens: number
+): Record<string, unknown> {
+  const messages: OpenAIMessage[] = [
+    { role: "system", content: request.systemPrompt },
+    { role: "user", content: request.userMessage },
+  ];
+  if (request.extraMessages?.length) {
+    for (const m of request.extraMessages) {
+      if (m.role === "assistant") {
+        messages.push({
+          role: "assistant",
+          content: m.content,
+          tool_calls: m.tool_calls,
+        });
+      } else {
+        messages.push({
+          role: "tool",
+          content: m.content ?? "",
+          tool_call_id: m.tool_call_id ?? "",
+          name: m.name,
+        });
+      }
+    }
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens,
+  };
+
+  if (request.tools?.length) {
+    body.tools = request.tools.map((t) => ({
+      type: "function",
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters,
+      },
+    }));
+    if (request.toolChoice) {
+      if (request.toolChoice === "auto" || request.toolChoice === "none") {
+        body.tool_choice = request.toolChoice;
+      } else {
+        body.tool_choice = {
+          type: "function",
+          function: { name: request.toolChoice.name },
+        };
+      }
+    }
+    // NOTE: do NOT set response_format when tools are active.
+  } else if (request.responseFormat === "json") {
+    body.response_format = { type: "json_object" };
+  }
+
+  return body;
+}
+
+/**
+ * Parse an OpenAI-compatible chat-completion response. Returns content,
+ * usage, and (when the model invoked tools) a structured tool_calls list.
+ */
+function parseOpenAIResponse(
+  data: unknown,
+  model: string
+): LLMResponse {
+  const d = data as {
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+        tool_calls?: Array<{
+          id?: string;
+          function?: { name?: string; arguments?: string };
+        }>;
+      };
+      finish_reason?: string;
+    }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  const choice = d.choices?.[0];
+  const content = choice?.message?.content ?? "";
+  const rawToolCalls = choice?.message?.tool_calls ?? [];
+  const toolCalls: ToolCallRequest[] = [];
+  for (const tc of rawToolCalls) {
+    if (!tc.id || !tc.function?.name) continue;
+    let parsedArgs: Record<string, unknown> = {};
+    if (tc.function.arguments) {
+      try {
+        const v = JSON.parse(tc.function.arguments);
+        if (v && typeof v === "object") parsedArgs = v as Record<string, unknown>;
+      } catch {
+        // Leave parsedArgs empty — tool handler will fail validation
+      }
+    }
+    toolCalls.push({ id: tc.id, name: tc.function.name, arguments: parsedArgs });
+  }
+
+  let finishReason: LLMResponse["finishReason"];
+  switch (choice?.finish_reason) {
+    case "stop":
+      finishReason = "stop";
+      break;
+    case "tool_calls":
+    case "function_call":
+      finishReason = "tool_calls";
+      break;
+    case "length":
+      finishReason = "length";
+      break;
+    default:
+      finishReason = choice?.finish_reason ? "other" : undefined;
+  }
+
+  return {
+    content: content ?? "",
+    inputTokens: d.usage?.prompt_tokens ?? 0,
+    outputTokens: d.usage?.completion_tokens ?? 0,
+    model,
+    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+    finishReason,
+  };
+}
 
 // =============================================================================
 // CONFIGURATION
@@ -69,7 +226,7 @@ function loadConfig(): LLMProviderConfig {
 /** Retry configuration */
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000; // 1s, 2s, 4s
-const REQUEST_TIMEOUT_MS = 30_000; // 30 seconds
+const REQUEST_TIMEOUT_MS = 120_000; // 120 seconds — consensus stage sends large prompts; qwen3-max needs time
 
 /**
  * Determines if an error/response is retryable.
@@ -136,22 +293,7 @@ export function createLLMProvider(configOverride?: Partial<LLMProviderConfig>): 
     const temperature = request.temperature ?? config.defaultTemperature;
     const maxTokens = request.maxTokens ?? config.defaultMaxTokens;
 
-    // Build request body
-    const messages: { role: string; content: string }[] = [
-      { role: "system", content: request.systemPrompt },
-      { role: "user", content: request.userMessage },
-    ];
-
-    const body: Record<string, unknown> = {
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    };
-
-    if (request.responseFormat === "json") {
-      body.response_format = { type: "json_object" };
-    }
+    const body = buildOpenAIBody(request, model, temperature, maxTokens);
 
     const url = `${config.baseUrl}/chat/completions`;
     const headers: Record<string, string> = {
@@ -217,28 +359,17 @@ export function createLLMProvider(configOverride?: Partial<LLMProviderConfig>): 
 
         // Parse successful response
         const data = await response.json();
-
-        const content = data.choices?.[0]?.message?.content ?? "";
-        const inputTokens = data.usage?.prompt_tokens ?? 0;
-        const outputTokens = data.usage?.completion_tokens ?? 0;
-
-        return {
-          content,
-          inputTokens,
-          outputTokens,
-          model,
-        };
+        return parseOpenAIResponse(data, model);
       } catch (error) {
-        // Handle AbortError (timeout)
+        // Handle AbortError (timeout) — retry once (transient slowness) then fail fast
         if (error instanceof Error && error.name === "AbortError") {
-          if (attempt < MAX_RETRIES) {
-            const delay = getRetryDelay(attempt);
-            await sleep(delay);
+          if (attempt < 1) {
+            await sleep(BASE_DELAY_MS);
             lastError = error;
             continue;
           }
           throw new LLMProviderError(
-            `LLM API request timed out after ${REQUEST_TIMEOUT_MS}ms (${MAX_RETRIES} retries exhausted)`,
+            `LLM API request timed out after ${REQUEST_TIMEOUT_MS}ms (1 retry exhausted)`,
             null,
             true
           );
@@ -296,21 +427,7 @@ export function createCancellableLLMProvider(
     const temperature = request.temperature ?? config.defaultTemperature;
     const maxTokens = request.maxTokens ?? config.defaultMaxTokens;
 
-    const messages: { role: string; content: string }[] = [
-      { role: "system", content: request.systemPrompt },
-      { role: "user", content: request.userMessage },
-    ];
-
-    const body: Record<string, unknown> = {
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    };
-
-    if (request.responseFormat === "json") {
-      body.response_format = { type: "json_object" };
-    }
+    const body = buildOpenAIBody(request, model, temperature, maxTokens);
 
     const url = `${config.baseUrl}/chat/completions`;
     const headers: Record<string, string> = {
@@ -389,17 +506,7 @@ export function createCancellableLLMProvider(
 
         // Parse successful response
         const data = await response.json();
-
-        const content = data.choices?.[0]?.message?.content ?? "";
-        const inputTokens = data.usage?.prompt_tokens ?? 0;
-        const outputTokens = data.usage?.completion_tokens ?? 0;
-
-        return {
-          content,
-          inputTokens,
-          outputTokens,
-          model,
-        };
+        return parseOpenAIResponse(data, model);
       } catch (error) {
         // Handle external abort
         if (signal?.aborted) {
@@ -505,24 +612,154 @@ function createBedrockProvider(config: LLMProviderConfig): LLMProvider {
             { cachePoint: { type: "default" as const } },
           ];
 
+    // Build the messages array. The initial turn is always [user].
+    // Subsequent tool-loop turns append the assistant's prior tool_use blocks
+    // and the user's tool_result blocks in OpenAI-compat shape via
+    // request.extraMessages — we map them here to Bedrock content blocks.
+    type BedrockBlock =
+      | { text: string }
+      | { toolUse: { toolUseId: string; name: string; input: unknown } }
+      | {
+          toolResult: {
+            toolUseId: string;
+            content: Array<{ text: string }>;
+            status?: "success" | "error";
+          };
+        };
+    const messages: Array<{ role: "user" | "assistant"; content: BedrockBlock[] }> = [
+      { role: "user", content: [{ text: request.userMessage }] },
+    ];
+    if (request.extraMessages?.length) {
+      for (const m of request.extraMessages) {
+        if (m.role === "assistant") {
+          const blocks: BedrockBlock[] = [];
+          if (m.content) blocks.push({ text: m.content });
+          for (const tc of m.tool_calls ?? []) {
+            let input: unknown = {};
+            try {
+              input = tc.function.arguments ? JSON.parse(tc.function.arguments) : {};
+            } catch {
+              input = {};
+            }
+            blocks.push({
+              toolUse: { toolUseId: tc.id, name: tc.function.name, input },
+            });
+          }
+          messages.push({ role: "assistant", content: blocks });
+        } else {
+          // role === "tool" → folds into the next user turn
+          messages.push({
+            role: "user",
+            content: [
+              {
+                toolResult: {
+                  toolUseId: m.tool_call_id ?? "",
+                  content: [{ text: m.content ?? "" }],
+                },
+              },
+            ],
+          });
+        }
+      }
+    }
+
+    // Bedrock toolConfig — only set when the caller wants tools active.
+    let toolConfig:
+      | {
+          tools: Array<{
+            toolSpec: {
+              name: string;
+              description: string;
+              inputSchema: { json: Record<string, unknown> };
+            };
+          }>;
+          toolChoice?: { auto: object } | { tool: { name: string } };
+        }
+      | undefined;
+    if (request.tools?.length) {
+      toolConfig = {
+        tools: request.tools.map((t) => ({
+          toolSpec: {
+            name: t.name,
+            description: t.description,
+            inputSchema: { json: t.parameters as Record<string, unknown> },
+          },
+        })),
+      };
+      if (request.toolChoice && request.toolChoice !== "none") {
+        toolConfig.toolChoice =
+          typeof request.toolChoice === "object"
+            ? { tool: { name: request.toolChoice.name } }
+            : { auto: {} };
+      }
+    }
+
+    // Bedrock's ContentBlock is a discriminated union with $unknown that the
+    // SDK validates at the boundary; our internal BedrockBlock type is the
+    // subset we actually emit (text / toolUse / toolResult). The cast is
+    // safe because every block we construct above matches one of those
+    // variants.
     const command = new ConverseCommand({
       modelId,
       system: systemBlocks,
-      messages: [
-        { role: "user", content: [{ text: request.userMessage }] },
-      ],
+      messages: messages as unknown as ConstructorParameters<
+        typeof ConverseCommand
+      >[0]["messages"],
       inferenceConfig: { temperature, maxTokens },
+      ...(toolConfig
+        ? {
+            toolConfig: toolConfig as unknown as ConstructorParameters<
+              typeof ConverseCommand
+            >[0]["toolConfig"],
+          }
+        : {}),
     });
 
     try {
       const response = await client.send(command);
 
       // ConverseCommand returns output.message.content as an array of blocks;
-      // for text-only responses there's a single text block.
+      // for text-only responses there's a single text block. With tools active
+      // the model can also return toolUse blocks alongside (or instead of) text.
       const blocks = response.output?.message?.content ?? [];
-      const content = blocks
-        .map((b) => ("text" in b && typeof b.text === "string" ? b.text : ""))
-        .join("");
+      let content = "";
+      const toolCalls: ToolCallRequest[] = [];
+      for (const b of blocks) {
+        if ("text" in b && typeof b.text === "string") {
+          content += b.text;
+        } else if (
+          "toolUse" in b &&
+          b.toolUse &&
+          typeof b.toolUse.toolUseId === "string" &&
+          typeof b.toolUse.name === "string"
+        ) {
+          const args =
+            b.toolUse.input && typeof b.toolUse.input === "object"
+              ? (b.toolUse.input as Record<string, unknown>)
+              : {};
+          toolCalls.push({
+            id: b.toolUse.toolUseId,
+            name: b.toolUse.name,
+            arguments: args,
+          });
+        }
+      }
+
+      let finishReason: LLMResponse["finishReason"];
+      switch (response.stopReason) {
+        case "end_turn":
+        case "stop_sequence":
+          finishReason = "stop";
+          break;
+        case "tool_use":
+          finishReason = "tool_calls";
+          break;
+        case "max_tokens":
+          finishReason = "length";
+          break;
+        default:
+          finishReason = response.stopReason ? "other" : undefined;
+      }
 
       // Bedrock bills cache reads at ~10% of the full input rate and cache
       // writes at ~125%. Counting them into inputTokens at full weight would
@@ -540,6 +777,8 @@ function createBedrockProvider(config: LLMProviderConfig): LLMProvider {
         inputTokens,
         outputTokens: u?.outputTokens ?? 0,
         model: modelId,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        finishReason,
       };
     } catch (error) {
       const status =

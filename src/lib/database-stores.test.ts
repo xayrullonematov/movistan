@@ -4,7 +4,7 @@ import { prisma } from "./db";
 import { artifactStore } from "./artifact-store";
 import { tokenBudgetManager } from "./token-budget-manager";
 import { eventStore } from "./event-store";
-import type { ArtifactType, ArtifactStatus, AgentType } from "@/types/domain";
+import type { ArtifactType, ArtifactStatus, AgentType, EventType } from "@/types/domain";
 
 // Helper to set up a test session in the database
 async function createTestSession(id: string): Promise<void> {
@@ -255,7 +255,7 @@ describe("Database-Backed Stores Property-Based Tests", () => {
 
             const appended = await eventStore.appendEvent({
               sessionId,
-              type: type as any,
+              type: type as EventType,
               agentId: isAgentEvent ? agentId : null,
               round,
               content,

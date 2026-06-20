@@ -503,6 +503,10 @@ export type ValidationResult<T> =
 
 On validation failure: re-prompt agent with error message (max 2 retries). On final failure: persist raw output with validation-failure metadata.
 
+**JSON-extraction tolerance:** before `JSON.parse`, `tryParseJson` strips a single surrounding ```` ```json ... ``` ```` (or unlabelled triple-backtick) fence if present. Some models — Bedrock Anthropic Haiku 4.5 in particular — consistently wrap structured output in markdown fences regardless of system-prompt instructions, and re-prompting does not reliably change that. The fence stripper keeps validation deterministic without weakening the underlying Zod schema check.
+
+**Terminal-failure observability:** `callWithRetry` in `agent-executor.ts` logs the final validation error (errors + first 400 chars of the last response) via `console.error` before throwing, so per-agent failures surface in the dev log even though the orchestrator's `Promise.allSettled` swallows the rejection.
+
 ### Token Budget Manager
 
 ```typescript
@@ -952,7 +956,7 @@ Cumulative token usage SHALL be tracked for every LLM call. When budget exceeded
 **Validates: Requirements 15.1, 15.4**
 
 ### Property 19: Artifact Operations From Consensus
-Consensus artifactOperations SHALL only reference valid operations (create/update/accept/reject) and SHALL produce corresponding artifact events.
+Consensus artifactOperations SHALL only reference valid operations (create/update/accept/reject) and SHALL produce corresponding artifact events. Operations whose `artifactId` does not match a real artifact in the session SHALL be skipped (logged via `console.warn`) rather than aborting the consensus stage — a single hallucinated ID from the consensus LLM must not be able to invalidate a successful round.
 **Validates: Requirements 12.7, 14.5**
 
 ### Property 20: Context Window Budget Respected

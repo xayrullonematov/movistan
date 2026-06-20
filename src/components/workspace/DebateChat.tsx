@@ -66,12 +66,10 @@ export default function DebateChat({
 }: DebateChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { events, isLoading } = useEventStream(sessionId);
-  const [selectedRound, setSelectedRound] = useState<number>(currentRound);
-
-  // Keep selectedRound in sync when currentRound advances
-  useEffect(() => {
-    setSelectedRound(currentRound);
-  }, [currentRound]);
+  const [selectedRoundOverride, setSelectedRound] = useState<number | null>(null);
+  const selectedRound = selectedRoundOverride === null || selectedRoundOverride > currentRound
+    ? currentRound
+    : selectedRoundOverride;
 
   // Determine available rounds from events
   const availableRounds = useMemo(() => {

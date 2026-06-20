@@ -21,6 +21,7 @@ import {
 } from "@/lib/output-validator";
 import { tokenBudgetManager } from "@/lib/token-budget-manager";
 import { getCritiqueTarget, DEFAULT_MODEL_TIERS } from "@/lib/agent-configs";
+import { runProposalToolLoop } from "@/lib/agent-tool-loop";
 import type {
   AgentConfig,
   AgentExecutor,
@@ -31,6 +32,8 @@ import type {
   LLMResponse,
   PersistedEvent,
   ProposalOutput,
+  ProposalRepoContext,
+  ProposalWithToolsResult,
   RevisionOutput,
   ValidationResult,
   WorkspaceContext,
@@ -170,6 +173,99 @@ export function createAgentExecutor(sessionId: string, round: number, modelTiers
         round,
         stage: "proposal",
       });
+    },
+
+    /**
+     * Tool-grounded proposal: runs the GitHub tool-call loop, then validates.
+     * On validation failure, falls back to the standard re-prompt retry path
+     * (no further tool calls) so the model can repair its JSON cheaply.
+     * Combined usage from every tool-loop turn is tracked as a single record.
+     */
+    async generateProposalWithTools(
+      agent: AgentConfig,
+      context: WorkspaceContext,
+      repoContext: ProposalRepoContext
+    ): Promise<ProposalWithToolsResult> {
+      const baseRequest = promptBuilder.buildProposalPrompt(agent, context);
+      const model = tiers.proposal;
+
+      // First attempt: full tool loop.
+      const loopResult = await runProposalToolLoop({
+        llmProvider,
+        baseRequest,
+        model,
+        agentId: agent.id,
+        repoContext: {
+          owner: repoContext.owner,
+          repo: repoContext.repo,
+          branch: repoContext.branch,
+          entries: repoContext.entries,
+          shortlist: repoContext.shortlist,
+          rawUrl: repoContext.rawUrl,
+        },
+      });
+
+      const toolStats = {
+        toolCallCount: loopResult.toolCallCount,
+        capHit: loopResult.capHit,
+        filesRead: loopResult.filesRead,
+      };
+
+      // Always record the cumulative tool-loop usage, even before validation,
+      // so the next stage's budget check sees the real cost.
+      await tokenBudgetManager.trackUsage(sessionId, {
+        agentId: agent.id,
+        round,
+        stage: "proposal",
+        inputTokens: loopResult.combinedUsage.inputTokens,
+        outputTokens: loopResult.combinedUsage.outputTokens,
+        model: loopResult.combinedUsage.model,
+      });
+
+      const firstValidation = validator.validateProposal(loopResult.finalContent);
+      if (firstValidation.success) {
+        return { proposal: firstValidation.data, toolStats };
+      }
+
+      // Validation failed — re-prompt up to MAX_VALIDATION_RETRIES times with
+      // tools disabled. The model already has the tool results in context via
+      // the prior conversation; we just need it to fix the JSON shape.
+      let lastErrors = firstValidation.errors;
+      let lastContent = loopResult.finalContent;
+
+      for (let attempt = 1; attempt <= MAX_VALIDATION_RETRIES; attempt++) {
+        const errorMsg = buildValidationErrorMessage(lastErrors);
+        const repairRequest: LLMRequest = {
+          ...baseRequest,
+          userMessage: `${baseRequest.userMessage}\n\n---\n\n${errorMsg}\n\nPrevious invalid response:\n${lastContent}`,
+        };
+        const response = await llmProvider.complete(repairRequest, model);
+        lastContent = response.content;
+        await tokenBudgetManager.trackUsage(sessionId, {
+          agentId: agent.id,
+          round,
+          stage: "proposal",
+          inputTokens: response.inputTokens,
+          outputTokens: response.outputTokens,
+          model: response.model,
+        });
+
+        const result = validator.validateProposal(response.content);
+        if (result.success) {
+          return { proposal: result.data, toolStats };
+        }
+        lastErrors = result.errors;
+      }
+
+      console.error(
+        `[agent-executor] proposal (with tools) validation failed after ${MAX_VALIDATION_RETRIES + 1} attempts ` +
+          `(agent=${agent.id}, model=${loopResult.combinedUsage.model}, toolCalls=${loopResult.toolCallCount}, capHit=${loopResult.capHit}). ` +
+          `Errors: ${lastErrors.join("; ")}. ` +
+          `Last response snippet: ${lastContent.slice(0, 400)}`
+      );
+      throw new Error(
+        `Validation failed after ${MAX_VALIDATION_RETRIES + 1} attempts for proposal (agent: ${agent.id}). Errors: ${lastErrors.join("; ")}`
+      );
     },
 
     /**

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { projectSessionState, applyEvents } from "./state-projector";
-import type { PersistedEvent, AgentType } from "@/types/domain";
+import type { PersistedEvent, AgentType, EventType, RoundStage } from "@/types/domain";
 
 // Helper to generate a dummy PersistedEvent
 function createDummyEvent(overrides: Partial<PersistedEvent>): PersistedEvent {
@@ -58,10 +58,10 @@ describe("StateProjector Property-Based Tests", () => {
       arr.map((e) =>
         createDummyEvent({
           id: e.id,
-          type: e.type as any,
-          agentId: e.agentId as any,
+          type: e.type as EventType,
+          agentId: e.agentId as AgentType | null,
           round: e.round,
-          stage: e.stage as any,
+          stage: e.stage as RoundStage | null,
           content: e.content,
           timestamp: e.timestamp,
         })
@@ -94,8 +94,8 @@ describe("StateProjector Property-Based Tests", () => {
     ).map((arr) =>
       arr.map((e) =>
         createDummyEvent({
-          type: e.type as any,
-          agentId: e.agentId as any,
+          type: e.type as EventType,
+          agentId: e.agentId as AgentType | null,
           round: e.round,
         })
       )
@@ -141,8 +141,8 @@ describe("StateProjector Property-Based Tests", () => {
     ).map((arr) =>
       arr.map((e) =>
         createDummyEvent({
-          type: e.type as any,
-          agentId: e.agentId as any,
+          type: e.type as EventType,
+          agentId: e.agentId as AgentType | null,
           round: e.round,
         })
       )

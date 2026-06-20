@@ -57,7 +57,7 @@ export const consensusOutputSchema = z.object({
           /** Reasoning for the agent's position */
           reasoning: z.string().min(1),
         })
-      ).min(2),
+      ).min(1),
       /** Array of event IDs that reference specific events demonstrating this disagreement */
       evidenceChain: z.array(z.string()),
     })
@@ -108,8 +108,8 @@ export const consensusOutputSchema = z.object({
       type: artifactTypeSchema.optional(),
       /** Title of the artifact */
       title: z.string().min(1),
-      /** Content of the artifact */
-      content: z.string().min(1),
+      /** Content of the artifact (required for create/update; omit for accept/reject) */
+      content: z.string().min(1).optional(),
       /** Reference to the event ID that triggered this operation */
       sourceEventId: z.string().optional(),
     })

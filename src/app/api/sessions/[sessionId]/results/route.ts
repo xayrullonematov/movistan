@@ -42,7 +42,7 @@ export async function GET(
       summary: {
         roundCount: state.currentRound,
         artifactCount: artifacts.length,
-        acceptedCount: artifacts.filter((a: any) => a.status === "accepted").length,
+        acceptedCount: artifacts.filter((a) => a.status === "accepted").length,
       },
     });
   } catch (error) {

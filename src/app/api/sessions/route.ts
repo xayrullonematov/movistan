@@ -8,7 +8,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventStore } from "@/lib/event-store";
-import type { AgentType } from "@/types/domain";
+import { parseGithubUrl, GithubError } from "@/lib/github-fetcher";
+import type { AgentType, SessionConfig } from "@/types/domain";
 
 // =============================================================================
 // ALL AGENTS (for initial state response)
@@ -42,6 +43,12 @@ export async function POST(request: Request) {
       title?: string;
       priorSessionSummary?: string;
       config?: { clarificationPolicy?: "allow" | "suppress" | number };
+      /**
+       * Optional GitHub repo (e.g. "vercel/next.js", "owner/repo@branch", or
+       * full URL) to ground the proposal stage in via the read-only tool loop.
+       * Branch defaults to the repo's default branch when omitted.
+       */
+      githubRepo?: string;
     };
 
     const { problemDescription, constraints, tokenBudget, title } = body;
@@ -53,6 +60,41 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate githubRepo if provided. We only persist owner/repo/branch
+    // here — the orchestrator resolves the default branch lazily when it
+    // first fetches the tree (so we don't make a synchronous network call
+    // just to create a session).
+    let parsedRepo: SessionConfig["githubRepo"] | undefined;
+    if (body.githubRepo !== undefined) {
+      if (typeof body.githubRepo !== "string") {
+        return NextResponse.json(
+          { error: "githubRepo must be a string" },
+          { status: 400 }
+        );
+      }
+      const parsed = parseGithubUrl(body.githubRepo);
+      if (parsed instanceof GithubError) {
+        return NextResponse.json(
+          { error: `Invalid githubRepo: ${parsed.message}` },
+          { status: 400 }
+        );
+      }
+      parsedRepo = {
+        owner: parsed.owner,
+        repo: parsed.repo,
+        // Placeholder when the user did not specify a branch — the orchestrator
+        // resolves the default branch on the first tree fetch.
+        branch: parsed.branch ?? "",
+        rawUrl: body.githubRepo,
+      };
+    }
+
+    const configObj: SessionConfig = {
+      ...(body.config ?? {}),
+      ...(parsedRepo ? { githubRepo: parsedRepo } : {}),
+    };
+    const hasConfig = Object.keys(configObj).length > 0;
+
     // Create Session via Prisma
     const session = await prisma.session.create({
       data: {
@@ -61,7 +103,7 @@ export async function POST(request: Request) {
         status: "active",
         currentRound: 0,
         tokenBudget: tokenBudget ?? null,
-        config: body.config ? JSON.stringify(body.config) : null,
+        config: hasConfig ? JSON.stringify(configObj) : null,
       },
     });
 

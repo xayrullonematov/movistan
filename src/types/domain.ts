@@ -66,6 +66,18 @@ export type ClarificationPolicy = "allow" | "suppress" | number;
 /** Session-level configuration stored as JSON in the Session.config column */
 export interface SessionConfig {
   clarificationPolicy?: ClarificationPolicy;
+  /**
+   * Optional GitHub repository to ground the proposal stage in. Parsed from
+   * the user-supplied URL by `parseGithubUrl` in github-fetcher.ts before
+   * being persisted; `branch` is the resolved branch (may differ from what
+   * the user typed if they omitted one and we filled in the default).
+   */
+  githubRepo?: {
+    owner: string;
+    repo: string;
+    branch: string;
+    rawUrl: string;
+  };
 }
 
 /** Risk severity levels */
@@ -140,7 +152,7 @@ export interface ConsensusOutput {
     artifactId?: string;
     type?: ArtifactType;
     title: string;
-    content: string;
+    content?: string; // required for create/update; omit for accept/reject
     sourceEventId?: string; // Links back to the event that justifies this operation
   }[];
 }
@@ -494,6 +506,41 @@ export interface CritiqueRouting {
 // LLM PROVIDER TYPES
 // =============================================================================
 
+/**
+ * A function tool the model can call. Shape is OpenAI-compat; the Bedrock
+ * provider maps it to `toolSpec.inputSchema.json` at the boundary.
+ */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+/** A single tool-call request emitted by the model. */
+export interface ToolCallRequest {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+/**
+ * Extra conversation turns to send alongside the system + user message —
+ * used by the tool-call loop to feed prior assistant tool_calls and tool
+ * results back to the model. OpenAI-compat shape; Bedrock provider maps
+ * these into ConverseCommand `toolUse` / `toolResult` content blocks.
+ */
+export interface ExtraMessage {
+  role: "assistant" | "tool";
+  content: string | null;
+  tool_calls?: Array<{
+    id: string;
+    type: "function";
+    function: { name: string; arguments: string };
+  }>;
+  tool_call_id?: string;
+  name?: string;
+}
+
 /** Request to the LLM provider */
 export interface LLMRequest {
   /**
@@ -521,6 +568,20 @@ export interface LLMRequest {
    * instruction, stance options for revision, etc.).
    */
   systemPromptStageSpecific?: string;
+  /**
+   * Function tools the model may invoke. When set, the provider does NOT
+   * apply `responseFormat: "json"` — the model needs freedom to emit
+   * `tool_calls`. JSON schema enforcement happens on the final non-tool
+   * response of the tool-call loop.
+   */
+  tools?: ToolDefinition[];
+  /** Tool-choice hint. `auto` lets the model decide; `none` forces no calls. */
+  toolChoice?: "auto" | "none" | { name: string };
+  /**
+   * Prior assistant tool_calls and tool results to replay back to the model
+   * for the next loop turn. Appended after the initial user message.
+   */
+  extraMessages?: ExtraMessage[];
 }
 
 /** Response from the LLM provider */
@@ -529,7 +590,12 @@ export interface LLMResponse {
   inputTokens: number;
   outputTokens: number;
   model: string;
+  /** Set when the model requests function/tool invocations instead of a text answer. */
+  toolCalls?: ToolCallRequest[];
+  /** Why the model stopped this turn. */
+  finishReason?: "stop" | "tool_calls" | "length" | "other";
 }
+
 
 /** LLM Provider configuration */
 export interface LLMProviderConfig {
@@ -549,9 +615,49 @@ export interface PromptBuilder {
   buildConsensusPrompt(roundEvents: PersistedEvent[], context: WorkspaceContext): LLMRequest;
 }
 
+/**
+ * Pre-fetched per-round repo context passed to `generateProposalWithTools`.
+ * Carries the filtered tree, target ref, and a per-agent shortlist used as
+ * a hint in the proposal prompt. Mirrors RepoContext in agent-tool-loop.ts.
+ */
+export interface ProposalRepoContext {
+  owner: string;
+  repo: string;
+  branch: string;
+  entries: Array<{ path: string; size: number }>;
+  shortlist: string[];
+  rawUrl?: string;
+}
+
+/** Tool-call stats from a single tool-grounded proposal attempt. */
+export interface ToolLoopStats {
+  toolCallCount: number;
+  capHit: boolean;
+  /** Paths successfully read via read_file, server-tracked in order of first read. */
+  filesRead: string[];
+}
+
+/** Result of a tool-grounded proposal: the validated output + observability stats. */
+export interface ProposalWithToolsResult {
+  proposal: ProposalOutput;
+  toolStats: ToolLoopStats;
+}
+
 /** Agent Executor interface */
 export interface AgentExecutor {
   generateProposal(agent: AgentConfig, context: WorkspaceContext): Promise<ProposalOutput>;
+  /**
+   * Tool-grounded proposal: runs the GitHub tool-call loop before the model
+   * commits to its final ProposalOutput. Only used when the session has a
+   * `githubRepo` configured. Validation + retry logic mirror generateProposal.
+   * Returns the proposal *and* tool-loop stats so the orchestrator can surface
+   * toolCallCount / capHit on the stage-progress event.
+   */
+  generateProposalWithTools(
+    agent: AgentConfig,
+    context: WorkspaceContext,
+    repoContext: ProposalRepoContext
+  ): Promise<ProposalWithToolsResult>;
   generateCritique(agent: AgentConfig, proposal: ProposalOutput, context: WorkspaceContext): Promise<CritiqueOutput>;
   generateRevision(agent: AgentConfig, critiques: CritiqueOutput[], context: WorkspaceContext): Promise<RevisionOutput>;
   synthesizeConsensus(roundEvents: PersistedEvent[], context: WorkspaceContext): Promise<ConsensusOutput>;

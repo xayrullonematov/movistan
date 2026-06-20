@@ -36,7 +36,7 @@ This is the **AI Engineering Room**: four LLM agents (`senior-engineer`, `securi
 ### Core invariants
 
 - **Event sourcing.** All session state is derived by replaying the append-only `Event` log. The only mutable state is `Artifact`. `state-projector.ts` (`projectSessionState`) is a **pure function** from events → `SessionState`; keep it pure (it hardcodes agent configs to avoid circular deps). `SessionSnapshot` persists projected state per round so reconstruction is snapshot + incremental events, never full replay.
-- **Structured outputs only.** Every agent response is validated against a Zod schema in `src/schemas/` (`proposal`, `critique`, `revision`, `consensus`). Clarification is a first-class `needsClarification` field — never parse agent prose with heuristics. Validation retries up to 2x on schema failure (`output-validator.ts`).
+- **Structured outputs only.** Every agent response is validated against a Zod schema in `src/schemas/` (`proposal`, `critique`, `revision`, `consensus`). Clarification is a first-class `needsClarification` field — never parse agent prose with heuristics. Validation retries up to 2x on schema failure (`output-validator.ts`). `tryParseJson` strips a single surrounding ```` ```json ... ``` ```` fence before `JSON.parse` — Bedrock Haiku in particular wraps JSON in fences even when told not to, and re-prompting doesn't reliably change that. Terminal validation failures log via `console.error` in `callWithRetry` (`agent-executor.ts`) — otherwise `Promise.allSettled` in the orchestrator swallows them silently.
 - **Summaries, not full history.** Agents never receive the full event log. `context-assembler.ts` builds context from the workspace/round/artifact summary services. Respect the per-call context budget.
 
 ### Round execution
@@ -47,6 +47,7 @@ A round runs four stages in order: **proposal → critique → revision → cons
 - Agents run via `Promise.allSettled` so one failure doesn't block the others.
 - A `SessionLock` (DB columns `lockedBy`/`lockedAt`, stale after 5 min) prevents concurrent round starts — released in a `finally`. Concurrent start returns 409.
 - **Critique routing is fixed by maximum objective conflict:** Senior↔Performance, Security↔Product. Each agent critiques exactly one other (`getCritiqueTarget` in `agent-configs.ts`).
+- **Consensus artifact-ops are resilient to bad IDs.** `executeArtifactOperations` pre-fetches existing artifact IDs and skips any `update`/`accept`/`reject` whose `artifactId` doesn't exist (logged via `console.warn`). A consensus agent hallucinating a slug-style ID (`decision-foo-bar`) instead of the real cuid would otherwise crash the entire round at `findUniqueOrThrow`.
 
 ### Crash recovery
 

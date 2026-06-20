@@ -27,13 +27,15 @@ import { roundSummaryService } from "@/lib/round-summary-service";
 import { AGENT_CONFIGS, getCritiqueTarget, BUDGET_CONSTRAINED_TIERS } from "@/lib/agent-configs";
 import { projectSessionState } from "@/lib/state-projector";
 import { prisma } from "@/lib/db";
+import { fetchRepoTree, GithubError } from "@/lib/github-fetcher";
+import { selectCandidateFiles } from "@/lib/repo-file-selector";
 import type {
   AgentType,
   Constraint,
   ConsensusOutput,
   CritiqueOutput,
-  PersistedEvent,
   ProposalOutput,
+  ProposalRepoContext,
   RevisionOutput,
   RoundOrchestrator,
   RoundStage,
@@ -57,6 +59,58 @@ const ALL_AGENTS: AgentType[] = [
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
+
+/**
+ * Parse `session.config` JSON safely. Returns an empty object if the column
+ * is null, undefined, or contains invalid JSON. The orchestrator must never
+ * crash a round because of a malformed config blob.
+ */
+function parseSessionConfig(raw: string | null | undefined): SessionConfig {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object") {
+      return parsed as SessionConfig;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Pre-fetch the repo tree for proposal-stage tool grounding and build a
+ * per-agent shortlist of candidate paths. Returns `null` when the repo
+ * cannot be fetched — the orchestrator falls back to the static-context
+ * proposal path in that case. Never throws.
+ */
+async function prepareRepoContextForProposal(
+  config: SessionConfig
+): Promise<Record<AgentType, ProposalRepoContext> | null> {
+  const repo = config.githubRepo;
+  if (!repo) return null;
+
+  const tree = await fetchRepoTree(repo.owner, repo.repo, repo.branch);
+  if (tree instanceof GithubError) {
+    console.warn(
+      `[round-orchestrator] repo tree fetch failed (${repo.owner}/${repo.repo}@${repo.branch}): ${tree.kind} — ${tree.message}. Falling back to static-context proposal.`
+    );
+    return null;
+  }
+
+  const perAgent: Partial<Record<AgentType, ProposalRepoContext>> = {};
+  for (const agentId of ALL_AGENTS) {
+    perAgent[agentId] = {
+      owner: tree.owner,
+      repo: tree.repo,
+      branch: tree.branch,
+      entries: tree.entries,
+      shortlist: selectCandidateFiles(tree.entries, agentId),
+      rawUrl: repo.rawUrl,
+    };
+  }
+  return perAgent as Record<AgentType, ProposalRepoContext>;
+}
 
 /**
  * Process artifact suggestions from an agent output.
@@ -257,7 +311,7 @@ export const roundOrchestrator: RoundOrchestrator = {
       // Execute all stages sequentially with auto-advancing
       const stages: RoundStage[] = ["proposal", "critique", "revision", "consensus"];
 
-      for (const stage of stages) {
+      for (let i = 0; i < stages.length; i++) {
         // Execute stage
         const stageResult = await roundOrchestrator.executeCurrentStage(sessionId);
 
@@ -329,7 +383,7 @@ export const roundOrchestrator: RoundOrchestrator = {
         const filepath = path.join(dir, filename);
         await writeFile(filepath, markdown);
         console.log(`[export] Written: ${filepath}`);
-      } catch (e) {
+      } catch {
         // Export failure must not break the round
       }
 
@@ -383,11 +437,44 @@ export const roundOrchestrator: RoundOrchestrator = {
       // PROPOSAL STAGE
       // =======================================================================
       case "proposal": {
+        // Optionally ground the proposal stage in a real GitHub repo via the
+        // tool-call loop. The static-context path is always the fallback if
+        // no repo is configured or the fetch fails.
+        const sessionConfig = parseSessionConfig(session.config);
+        const repoContexts = await prepareRepoContextForProposal(sessionConfig);
+        if (sessionConfig.githubRepo && !repoContexts) {
+          await eventStore.appendEvent({
+            sessionId,
+            type: "stage-progress",
+            agentId: null,
+            round: currentRound,
+            stage: "proposal",
+            content: {
+              stage: "proposal",
+              status: "repo-fetch-skipped",
+              repo: `${sessionConfig.githubRepo.owner}/${sessionConfig.githubRepo.repo}@${sessionConfig.githubRepo.branch}`,
+            },
+          });
+        }
+
         // Execute ALL 4 agents in parallel
         const proposalResults = await Promise.allSettled(
           ALL_AGENTS.map(async (agentId) => {
             const agent = AGENT_CONFIGS[agentId];
-            const proposal = await agentExecutor.generateProposal(agent, context);
+            const repoCtx = repoContexts?.[agentId];
+            let proposal: ProposalOutput;
+            let toolCallCount: number | undefined;
+            let capHit: boolean | undefined;
+            let filesRead: string[] | undefined;
+            if (repoCtx) {
+              const result = await agentExecutor.generateProposalWithTools(agent, context, repoCtx);
+              proposal = result.proposal;
+              toolCallCount = result.toolStats.toolCallCount;
+              capHit = result.toolStats.capHit;
+              filesRead = result.toolStats.filesRead;
+            } else {
+              proposal = await agentExecutor.generateProposal(agent, context);
+            }
 
             // Persist stage-progress event immediately for real-time UI
             await eventStore.appendEvent({
@@ -396,7 +483,13 @@ export const roundOrchestrator: RoundOrchestrator = {
               agentId,
               round: currentRound,
               stage: "proposal",
-              content: { agentId, stage: "proposal", status: "completed" },
+              content: {
+                agentId,
+                stage: "proposal",
+                status: "completed",
+                groundedByRepo: Boolean(repoCtx),
+                ...(toolCallCount !== undefined ? { toolCallCount, capHit, filesRead } : {}),
+              },
             });
 
             return { agentId, proposal };
