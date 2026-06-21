@@ -9,6 +9,7 @@ import {
   categoriesMatch,
   classifyCategory,
   analyzeCoverage,
+  deduplicateCategories,
   type ComparisonInput,
   type ExtractedCategory,
 } from "./baseline-comparison";
@@ -299,6 +300,67 @@ describe("categoriesMatch", () => {
 
   it("does not match unrelated categories", () => {
     expect(categoriesMatch("sql injection", "memory leak")).toBe(false);
+  });
+
+  it("does not match short substrings (< 10 chars) via containment", () => {
+    // "caching" is 7 chars -- too short for substring matching
+    expect(
+      categoriesMatch("caching", "improve caching strategy for session tokens")
+    ).toBe(false);
+    // "api" is 3 chars -- should not match
+    expect(categoriesMatch("api", "api rate limiting implementation")).toBe(false);
+  });
+
+  it("matches substrings that are 10+ chars long", () => {
+    // "rate limiting" is 13 chars -- long enough for substring match
+    expect(
+      categoriesMatch("rate limiting", "implement rate limiting on api endpoints")
+    ).toBe(true);
+    // "sql injection" is 13 chars
+    expect(
+      categoriesMatch("sql injection", "fix sql injection in query builder")
+    ).toBe(true);
+  });
+});
+
+describe("deduplicateCategories", () => {
+  it("removes duplicates within the same arm", () => {
+    const categories: ExtractedCategory[] = [
+      { label: "implement rate limiting on api endpoints", originalText: "Implement rate limiting on API endpoints", source: "decision" },
+      { label: "rate limiting on api endpoints", originalText: "Rate limiting on API endpoints", source: "decision" },
+      { label: "sql injection vulnerability", originalText: "SQL injection", source: "risk", severity: "high" },
+    ];
+    const result = deduplicateCategories(categories);
+    // The second rate limiting entry is a near-duplicate; should be removed
+    expect(result).toHaveLength(2);
+    expect(result[0].originalText).toBe("Implement rate limiting on API endpoints");
+    expect(result[1].originalText).toBe("SQL injection");
+  });
+
+  it("keeps distinct categories", () => {
+    const categories: ExtractedCategory[] = [
+      { label: "sql injection vulnerability", originalText: "SQL injection", source: "risk", severity: "high" },
+      { label: "memory leak in event listeners", originalText: "Memory leak", source: "risk", severity: "medium" },
+      { label: "add api rate limiting", originalText: "Add rate limiting", source: "decision" },
+    ];
+    const result = deduplicateCategories(categories);
+    expect(result).toHaveLength(3);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(deduplicateCategories([])).toHaveLength(0);
+  });
+
+  it("deduplicates recommendations that overlap with artifactSuggestions", () => {
+    // Simulates the double-counting scenario: same concern in recommendations[]
+    // and artifactSuggestions of type "recommendation"
+    const categories: ExtractedCategory[] = [
+      { label: "migrate to parameterized queries", originalText: "Migrate to parameterized queries", source: "decision" },
+      { label: "migrate to parameterized queries for all sql calls", originalText: "Migrate to parameterized queries for all SQL calls", source: "decision" },
+    ];
+    const result = deduplicateCategories(categories);
+    expect(result).toHaveLength(1);
+    expect(result[0].originalText).toBe("Migrate to parameterized queries");
   });
 });
 

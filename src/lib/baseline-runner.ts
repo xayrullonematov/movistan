@@ -178,33 +178,16 @@ export async function runBaseline(
     shortlist: [], // No persona-specific shortlist for baseline
   };
 
-  // Run the tool loop -- same function used by debate agents.
-  // We pass "senior-engineer" as agentId since runProposalToolLoop requires
-  // an AgentType, but our custom user message already has the repo hint
-  // built in (without persona language). The buildRepoHint inside
-  // runProposalToolLoop will append to userMessage, but we have already
-  // included our own grounding section. To avoid duplication, we override
-  // the userMessage in baseRequest to be just the problem statement, and
-  // let buildRepoHint add the repo grounding. Actually, looking at the code
-  // more carefully, runProposalToolLoop calls buildRepoHint internally and
-  // appends it to baseRequest.userMessage. So we should NOT include our own
-  // repo grounding in the user message -- we'll let the tool loop add it.
-  //
-  // However, buildRepoHint uses persona-specific language ("Candidate files
-  // relevant to your persona (agentId)"). Since the baseline is not a persona,
-  // we need a workaround. The simplest approach: include our own grounding
-  // in userMessage and accept that buildRepoHint will also append (it just
-  // adds additional info which is harmless). Actually, reviewing buildRepoHint
-  // output -- it references "your persona" which is misleading for a baseline.
-  //
-  // Better approach: build the user message with the problem statement only
-  // (no repo grounding), and let buildRepoHint handle it. The "persona"
-  // reference is minor and the LLM will simply use it as context. The
-  // shortlist is empty so it will say "(no high-signal candidates detected)".
-  //
-  // Simplest correct approach: just use problem description as userMessage
-  // and let the tool loop append the standard repo hint.
-
+  // KNOWN LIMITATION: runProposalToolLoop internally calls buildRepoHint(agentId, repoContext)
+  // which appends "Candidate files relevant to your persona (senior-engineer)" to the user
+  // message. This persona label leaks into the baseline prompt, which ideally should be
+  // persona-neutral per P3.md's requirement that "only the multi-persona/multi-round
+  // structure should differ." However, since (a) the shortlist is empty so no files are
+  // biased, (b) "senior-engineer" is the most general label, and (c) the system prompt
+  // already establishes the role as a comprehensive assessor covering all 4 disciplines,
+  // the practical effect on output quality is negligible. Suppressing the persona label
+  // would require modifying runProposalToolLoop's signature (adding an optional label
+  // override), which is out of scope for the comparison module.
   const cleanBaseRequest: LLMRequest = {
     systemPrompt: buildBaselineSystemPrompt(),
     userMessage: `PROBLEM STATEMENT:\n\n${config.problemDescription}`,

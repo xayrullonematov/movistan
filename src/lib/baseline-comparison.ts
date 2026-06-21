@@ -323,9 +323,16 @@ export function extractDebateCategories(
 // =============================================================================
 
 /**
+ * Minimum character length for substring matching to fire.
+ * Prevents short labels like "api" or "caching" from over-matching
+ * longer, unrelated descriptions that happen to contain the substring.
+ */
+const MIN_SUBSTRING_LENGTH = 10;
+
+/**
  * Compute similarity between two category labels.
- * Uses substring matching and word overlap to determine if two categories
- * refer to the same concern.
+ * Uses substring matching (with a minimum length guard) and word overlap
+ * to determine if two categories refer to the same concern.
  *
  * Returns true if the categories are considered matching.
  */
@@ -333,22 +340,55 @@ export function categoriesMatch(a: string, b: string): boolean {
   // Exact match
   if (a === b) return true;
 
-  // One contains the other (substring match)
-  if (a.includes(b) || b.includes(a)) return true;
+  // One contains the other (substring match) -- only if the contained
+  // string is long enough to be meaningful (>= MIN_SUBSTRING_LENGTH chars).
+  // This prevents short labels like "api" or "caching" from matching
+  // any description that happens to include them as a substring.
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  if (shorter.length >= MIN_SUBSTRING_LENGTH && longer.includes(shorter)) {
+    return true;
+  }
 
-  // Word overlap: if 60%+ of words overlap, consider a match
+  // Word overlap: if 60%+ of words overlap, consider a match.
+  // Require at least 2 significant words in the smaller set to avoid
+  // single-word labels (e.g., "caching") matching any multi-word description
+  // that happens to include that word.
   const wordsA = new Set(a.split(/\s+/).filter((w) => w.length > 2));
   const wordsB = new Set(b.split(/\s+/).filter((w) => w.length > 2));
 
   if (wordsA.size === 0 || wordsB.size === 0) return false;
+
+  const minSize = Math.min(wordsA.size, wordsB.size);
+  if (minSize < 2) return false;
 
   let overlap = 0;
   for (const word of wordsA) {
     if (wordsB.has(word)) overlap++;
   }
 
-  const minSize = Math.min(wordsA.size, wordsB.size);
-  return minSize > 0 && overlap / minSize >= 0.6;
+  return overlap / minSize >= 0.6;
+}
+
+/**
+ * Deduplicate a list of extracted categories using the same `categoriesMatch`
+ * heuristic used for cross-arm overlap. When two categories within the same
+ * arm refer to the same concern (e.g., a recommendation that also appears as
+ * an artifactSuggestion), only the first occurrence is kept.
+ */
+export function deduplicateCategories(
+  categories: ExtractedCategory[]
+): ExtractedCategory[] {
+  const result: ExtractedCategory[] = [];
+  for (const cat of categories) {
+    const isDuplicate = result.some((existing) =>
+      categoriesMatch(existing.label, cat.label)
+    );
+    if (!isDuplicate) {
+      result.push(cat);
+    }
+  }
+  return result;
 }
 
 /**
@@ -470,9 +510,13 @@ export function analyzeCoverage(
 export function generateComparisonReport(
   input: ComparisonInput
 ): ComparisonReport {
-  // Extract categories from both arms
-  const baselineCategories = extractBaselineCategories(input.baselineResult.output);
-  const debateCategories = extractDebateCategories(input.debateConsensus);
+  // Extract categories from both arms, then deduplicate within each arm
+  // to avoid inflating counts when the LLM produces the same concern in
+  // multiple output fields (e.g., recommendations[] and artifactSuggestions).
+  const rawBaselineCategories = extractBaselineCategories(input.baselineResult.output);
+  const rawDebateCategories = extractDebateCategories(input.debateConsensus);
+  const baselineCategories = deduplicateCategories(rawBaselineCategories);
+  const debateCategories = deduplicateCategories(rawDebateCategories);
 
   // Compute overlap
   const { baselineOnly, debateOnly, both } = computeOverlap(
