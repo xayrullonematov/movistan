@@ -124,14 +124,39 @@ export default function AgentDiagram() {
                 strokeWidth="2.5"
                 className="transition-all duration-300"
               />
-              {/* Icon placeholder - simple geometric shape */}
-              <circle
-                cx={agent.cx}
-                cy={agent.cy}
-                r={8}
-                fill={agent.color}
-                opacity={0.8}
-              />
+              {/* Agent icon */}
+              {agent.id === "senior" && (
+                /* Architect - layers/building icon */
+                <path
+                  d={`M${agent.cx - 8} ${agent.cy + 4} L${agent.cx} ${agent.cy - 8} L${agent.cx + 8} ${agent.cy + 4} Z M${agent.cx - 6} ${agent.cy + 4} L${agent.cx - 6} ${agent.cy + 8} L${agent.cx + 6} ${agent.cy + 8} L${agent.cx + 6} ${agent.cy + 4}`}
+                  fill={agent.color}
+                  opacity={0.9}
+                />
+              )}
+              {agent.id === "security" && (
+                /* Guardian - shield icon */
+                <path
+                  d={`M${agent.cx} ${agent.cy - 9} L${agent.cx - 8} ${agent.cy - 5} L${agent.cx - 8} ${agent.cy + 2} C${agent.cx - 8} ${agent.cy + 6} ${agent.cx} ${agent.cy + 9} ${agent.cx} ${agent.cy + 9} C${agent.cx} ${agent.cy + 9} ${agent.cx + 8} ${agent.cy + 6} ${agent.cx + 8} ${agent.cy + 2} L${agent.cx + 8} ${agent.cy - 5} Z`}
+                  fill={agent.color}
+                  opacity={0.9}
+                />
+              )}
+              {agent.id === "performance" && (
+                /* Optimizer - lightning bolt icon */
+                <path
+                  d={`M${agent.cx + 2} ${agent.cy - 9} L${agent.cx - 5} ${agent.cy + 1} L${agent.cx} ${agent.cy + 1} L${agent.cx - 2} ${agent.cy + 9} L${agent.cx + 5} ${agent.cy - 1} L${agent.cx} ${agent.cy - 1} Z`}
+                  fill={agent.color}
+                  opacity={0.9}
+                />
+              )}
+              {agent.id === "product" && (
+                /* Advocate - star icon */
+                <path
+                  d={`M${agent.cx} ${agent.cy - 9} L${agent.cx + 3} ${agent.cy - 3} L${agent.cx + 9} ${agent.cy - 2} L${agent.cx + 5} ${agent.cy + 3} L${agent.cx + 6} ${agent.cy + 9} L${agent.cx} ${agent.cy + 6} L${agent.cx - 6} ${agent.cy + 9} L${agent.cx - 5} ${agent.cy + 3} L${agent.cx - 9} ${agent.cy - 2} L${agent.cx - 3} ${agent.cy - 3} Z`}
+                  fill={agent.color}
+                  opacity={0.9}
+                />
+              )}
               {/* Label below */}
               <text
                 x={agent.cx}

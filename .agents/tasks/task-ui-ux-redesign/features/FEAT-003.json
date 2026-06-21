@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Address review findings: (1) Add Expand All/Collapse All in DebateChat, (2) Fix fragile summary derivation in DebateMessage, (3) Show filtered-event indicator in ToolCallTrace, (4) Add confidence guard in ResultsDashboard, (5) Add unit tests for new collapse/filter/parsing logic.",
+  "status": "completed",
+  "steps": [
+    "1. DebateChat: Add an 'Expand All / Collapse All' toggle button that controls all DebateMessage expand states.",
+    "2. DebateMessage: Fix summary derivation to try parsed.summary, parsed.position, parsed.recommendation fields before falling back to content.slice(0,100).",
+    "3. ToolCallTrace: Show a note when stage-progress events are filtered out (not groundedByRepo).",
+    "4. ResultsDashboard: Add confidence guard - if confidence > 1, treat as already percentage.",
+    "5. Add unit tests for: DebateMessage summary extraction logic, ResultsDashboard confidence capping, ToolCallTrace event parsing/filtering."
+  ],
+  "acceptance_criteria": [
+    "DebateChat has an Expand All / Collapse All toggle that batch-expands or collapses all debate messages",
+    "DebateMessage summary tries parsed.summary, parsed.position, parsed.recommendation before raw slice",
+    "ToolCallTrace shows a note like 'N events hidden (not repo-grounded)' when events are filtered",
+    "ResultsDashboard confidence display handles values > 1 correctly (treats as percentage already)",
+    "Unit tests exist for summary extraction, confidence capping, and event parsing logic",
+    "npm run build passes",
+    "npm run lint passes",
+    "npm run test passes (new tests)"
+  ],
+  "verification": [
+    "npm run build exits with code 0",
+    "npm run lint exits with code 0",
+    "npm run test exits with code 0 for the new test file"
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 review issues fixed. Build and lint pass (0 errors). 24 new unit tests pass covering deriveSummary (9 tests), formatConfidence (7 tests), and parseStageProgress (8 tests). DebateMessage now accepts forceExpanded prop from parent for batch control. ToolCallTrace shows hidden event count in header and expanded panel."
+}

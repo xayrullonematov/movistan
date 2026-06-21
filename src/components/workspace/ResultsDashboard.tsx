@@ -1,6 +1,7 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { useState } from "react";
+import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import type { SessionState, AgentType, Severity } from "@/types/domain";
 
 interface ResultsDashboardProps {
@@ -20,6 +21,16 @@ const agentDotColors: Record<AgentType, string> = {
   "performance-engineer": "bg-amber-500",
   "product-engineer": "bg-violet-500",
 };
+
+/**
+ * Normalize a confidence value to a percentage integer.
+ * If confidence > 1, treat it as already a percentage (0-100 scale).
+ * Otherwise, multiply by 100 to convert from 0-1 fraction.
+ */
+export function formatConfidence(confidence: number): number {
+  if (confidence > 1) return Math.round(confidence);
+  return Math.round(confidence * 100);
+}
 
 function ConsensusMeter({
   agreements,
@@ -104,6 +115,8 @@ export default function ResultsDashboard({
   onExport,
 }: ResultsDashboardProps) {
   const consensus = session.consensus;
+  const [showAllDecisions, setShowAllDecisions] = useState(false);
+  const [showAllRisks, setShowAllRisks] = useState(false);
 
   if (!consensus) {
     return (
@@ -135,8 +148,34 @@ export default function ResultsDashboard({
     );
   }
 
+  // Derive headline from top recommended decision or overall confidence
+  const topDecision = consensus.recommendedDecisions?.[0];
+  const headline = topDecision
+    ? `Recommendation: ${topDecision.title} \u2014 confidence ${formatConfidence(topDecision.confidence)}%`
+    : `Overall Confidence: ${formatConfidence(consensus.overallConfidence || 0)}%`;
+
+  // Sort decisions by confidence descending
+  const sortedDecisions = [...(consensus.recommendedDecisions || [])].sort(
+    (a, b) => b.confidence - a.confidence
+  );
+  const cappedDecisions = showAllDecisions ? sortedDecisions : sortedDecisions.slice(0, 5);
+  const hasMoreDecisions = sortedDecisions.length > 5;
+
+  // Sort risks by severity: high > medium > low
+  const severityOrder: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
+  const sortedRisks = [...(consensus.identifiedRisks || [])].sort(
+    (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
+  );
+  const cappedRisks = showAllRisks ? sortedRisks : sortedRisks.slice(0, 5);
+  const hasMoreRisks = sortedRisks.length > 5;
+
   return (
     <div className="h-full overflow-y-auto px-4 py-4 space-y-5">
+      {/* Headline / TL;DR */}
+      <div className="rounded-lg bg-blue-500/5 border border-blue-600/30 px-4 py-3">
+        <p className="text-sm font-medium text-blue-300">{headline}</p>
+      </div>
+
       {/* Consensus Meter */}
       <ConsensusMeter
         agreements={consensus.agreements?.length || 0}
@@ -144,13 +183,13 @@ export default function ResultsDashboard({
       />
 
       {/* Key Decisions */}
-      {consensus.recommendedDecisions && consensus.recommendedDecisions.length > 0 && (
+      {sortedDecisions.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-3">
             Key Decisions
           </h3>
           <div className="space-y-2">
-            {consensus.recommendedDecisions.map((decision, i) => (
+            {cappedDecisions.map((decision, i) => (
               <div
                 key={i}
                 className="rounded-lg bg-green-500/5 border border-green-600/30 p-3"
@@ -160,7 +199,7 @@ export default function ResultsDashboard({
                     {decision.title}
                   </h4>
                   <span className="text-[10px] text-green-400 font-mono shrink-0">
-                    {Math.round(decision.confidence * 100)}%
+                    {formatConfidence(decision.confidence)}%
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
@@ -169,11 +208,21 @@ export default function ResultsDashboard({
               </div>
             ))}
           </div>
+          {hasMoreDecisions && (
+            <button
+              onClick={() => setShowAllDecisions(!showAllDecisions)}
+              className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              aria-expanded={showAllDecisions}
+            >
+              {showAllDecisions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showAllDecisions ? "Show less" : `Show all (${sortedDecisions.length})`}
+            </button>
+          )}
         </div>
       )}
 
       {/* Risk Register */}
-      {consensus.identifiedRisks && consensus.identifiedRisks.length > 0 && (
+      {sortedRisks.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-3">
             Risk Register
@@ -194,7 +243,7 @@ export default function ResultsDashboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700/50">
-                {consensus.identifiedRisks.map((risk, i) => (
+                {cappedRisks.map((risk, i) => (
                   <tr key={i} className="hover:bg-gray-800/30">
                     <td className="px-3 py-2 text-gray-300">
                       {risk.description}
@@ -222,6 +271,16 @@ export default function ResultsDashboard({
               </tbody>
             </table>
           </div>
+          {hasMoreRisks && (
+            <button
+              onClick={() => setShowAllRisks(!showAllRisks)}
+              className="mt-2 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              aria-expanded={showAllRisks}
+            >
+              {showAllRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showAllRisks ? "Show less" : `Show all (${sortedRisks.length})`}
+            </button>
+          )}
         </div>
       )}
 

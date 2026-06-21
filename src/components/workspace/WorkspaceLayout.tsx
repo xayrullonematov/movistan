@@ -82,7 +82,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const [isStartingRound, setIsStartingRound] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
-  const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("all");
+  const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("accepted");
 
   // Compute workspace state
   const isEmptyState = session.currentRound === 0 && session.artifacts.length === 0 && !session.currentStage;
@@ -95,11 +95,14 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
 
   // Filter artifacts
   const filteredArtifacts = useMemo(() => {
-    return session.artifacts.filter((a) => {
+    const filtered = session.artifacts.filter((a) => {
       if (artifactTypeFilter !== "all" && a.type !== artifactTypeFilter) return false;
       if (artifactStatusFilter !== "all" && a.status !== artifactStatusFilter) return false;
       return true;
     });
+    // Sort: accepted first, then draft, then rejected
+    const statusOrder: Record<ArtifactStatus, number> = { accepted: 0, draft: 1, rejected: 2 };
+    return filtered.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
   }, [session.artifacts, artifactTypeFilter, artifactStatusFilter]);
 
   // Tab configuration
@@ -337,6 +340,17 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                         <option value="accepted">Accepted</option>
                         <option value="rejected">Rejected</option>
                       </select>
+                      {(artifactTypeFilter !== "all" || artifactStatusFilter !== "all") && (
+                        <button
+                          onClick={() => {
+                            setArtifactTypeFilter("all");
+                            setArtifactStatusFilter("all");
+                          }}
+                          className="px-2.5 py-1.5 text-xs bg-blue-900/40 border border-blue-700/50 rounded-lg text-blue-300 hover:bg-blue-900/60 hover:text-blue-200 transition-colors"
+                        >
+                          Show All
+                        </button>
+                      )}
                       <span className="ml-auto text-xs text-gray-500">
                         {filteredArtifacts.length} artifact{filteredArtifacts.length !== 1 ? "s" : ""}
                       </span>

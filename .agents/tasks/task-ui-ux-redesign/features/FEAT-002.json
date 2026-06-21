@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement all 6 P2DESIGN.md UI/UX tasks: (1) Headline/TL;DR on Results screen, (2) Tool-call trace visibility, (3) Artifacts tab default filters, (4) Collapse debate messages by default, (5) Cap Key Decisions/Risk Register to top 3-5, (6) Cleanup dead components and fix AgentDiagram icons.",
+  "status": "completed",
+  "steps": [
+    "TASK 1 - ResultsDashboard headline: In src/components/workspace/ResultsDashboard.tsx, add a one-line recommendation headline at the very top of the results view (above the ConsensusMeter). Derive it from session.consensus data - show the top recommended decision with its confidence percentage. Example format: 'Recommendation: [title] - confidence X%'. If no recommendedDecisions exist, fall back to showing the overall confidence level.",
+    "TASK 2 - ToolCallTrace component: Create src/components/workspace/ToolCallTrace.tsx. This component renders a table showing agent name, files read, call count, and cap-hit status. Source the data from stage-progress events in the event stream - these events already carry { toolCallCount, capHit, filesRead } when groundedByRepo is true. Accept events as a prop (from DebateChat or the workspace). During proposal stage, show a 'live' version (e.g., 'Security agent is reading middleware.ts...'). After the round completes, show a static summary table. Integrate this into WorkspaceLayout - add it as a collapsible section within the Debate tab or as a sub-section visible during/after the proposal stage in DebateChat.tsx.",
+    "TASK 3 - Artifacts default filters: In src/components/workspace/WorkspaceLayout.tsx, change the initial value of artifactStatusFilter from 'all' to 'accepted'. Add a sort for artifacts by confidence (derived from status - accepted first, then by type priority). Add a clearly-labeled 'Show All' toggle button that resets both filters to 'all'. Keep the existing select dropdowns for fine-grained filtering.",
+    "TASK 4 - Collapse debate messages: In src/components/workspace/DebateMessage.tsx, render each agent turn collapsed by default - showing only agent name + one-line summary (parsed from content.summary). Click or keyboard (Enter/Space) expands the full structured content. Reuse the expand/collapse interaction pattern from ArtifactCard.tsx (useState boolean toggle). Add aria-expanded, role='button', tabIndex=0, focus-visible ring matching AgentArena.tsx conventions.",
+    "TASK 5 - Cap Key Decisions and Risk Register: In src/components/workspace/ResultsDashboard.tsx, show only the top 3-5 items in Key Decisions (sorted by confidence descending) and Risk Register (sorted by severity: high > medium > low). Add a 'Show all (N)' expander button below each section that reveals the full list. Use useState to track expanded state. Match the expand/collapse accessibility pattern.",
+    "TASK 6a - Delete dead components: Delete src/components/workspace/EngineeringOutcomesPanel.tsx, src/components/workspace/DecisionLog.tsx, and src/components/workspace/SharedWorkspace.tsx. These are confirmed unused - EngineeringOutcomesPanel imports DecisionLog but nothing imports EngineeringOutcomesPanel or SharedWorkspace. Verify with grep that no other file imports them.",
+    "TASK 6b - Fix AgentDiagram icons: In src/components/landing/AgentDiagram.tsx, replace the plain circle icon placeholders with real SVG icons. Use simple recognizable shapes: Architect (senior) = a building/layers icon, Guardian (security) = a shield icon, Optimizer (performance) = a lightning bolt icon, Advocate (product) = a heart/star icon. Use the existing agent color tokens. Keep the icons as inline SVG paths within the existing <g> elements."
+  ],
+  "acceptance_criteria": [
+    "Results screen shows a one-line headline recommendation at the top before the consensus gauge",
+    "ToolCallTrace component exists and displays agent tool-call data from stage-progress events (not hardcoded)",
+    "Artifacts tab loads with 'accepted' status filter by default; a 'Show All' toggle resets to show everything",
+    "Debate messages render collapsed by default showing agent name + summary; clicking expands full detail",
+    "Debate message expand/collapse is keyboard-accessible (Enter/Space) with aria-expanded attribute",
+    "Key Decisions shows top 3-5 with 'Show all (N)' expander; Risk Register shows top 3-5 with expander",
+    "EngineeringOutcomesPanel.tsx, DecisionLog.tsx, SharedWorkspace.tsx are deleted and build still passes",
+    "AgentDiagram.tsx uses real SVG path icons instead of plain circles",
+    "npm run build passes with all changes",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build exits with code 0",
+    "npm run lint exits with code 0",
+    "Confirm deleted files no longer exist: ls src/components/workspace/EngineeringOutcomesPanel.tsx src/components/workspace/DecisionLog.tsx src/components/workspace/SharedWorkspace.tsx should all fail",
+    "grep -r 'EngineeringOutcomesPanel\\|DecisionLog\\|SharedWorkspace' src/ should find no import statements"
+  ],
+  "blocked_reason": null,
+  "findings": "All 6 tasks implemented successfully. Build (next build) and lint both pass with 0 errors. The 11 lint warnings are all pre-existing (unused variables in test files and existing components). Dead components confirmed deleted with no remaining imports. ToolCallTrace integrated into DebateChat as a collapsible section above messages."
+}
