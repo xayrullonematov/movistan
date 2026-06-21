@@ -1,0 +1,14 @@
+{
+  "task_id": "task-phase3-baseline-comparison",
+  "task_description": "Implement Phase 3 of Movistan: Efficiency-vs-Baseline Metric. Build a single-agent baseline runner with identical tool access to debate agents, a comparison report generator that measures category overlap and token costs, and a script/test harness to produce the comparison artifact for the submission writeup.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "All 59 tests pass (13 baseline-runner, 46 baseline-comparison). Review issues addressed: (1) within-arm deduplication via deduplicateCategories(), (2) MIN_SUBSTRING_LENGTH=10 guard + min 2-word requirement on word overlap, (3) persona hint documented as known limitation, (4) deduplication applied in generateComparisonReport before overlap computation. Pre-existing type errors in output-validator.test.ts, prompt-builder.test.ts, ui-logic.test.ts remain unchanged."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Build the baseline runner (src/lib/baseline-runner.ts) - a single LLM call with identical tool access (list_files, read_file, search_code) and the same 6-call cap as a single debate agent. The prompt explicitly asks for a full engineering assessment covering architecture, security, performance, AND product considerations. Output uses the same ProposalOutput structured schema so results are directly comparable to debate agent outputs.",
+  "status": "in_progress",
+  "steps": [
+    "Create src/lib/baseline-runner.ts. Import createLLMProvider from src/lib/llm-provider.ts, runProposalToolLoop and RepoContext/TOOL_DEFS/MAX_TOOL_CALLS_PER_AGENT from src/lib/agent-tool-loop.ts, OutputValidatorImpl from src/lib/output-validator.ts, and ProposalOutput from src/types/domain.ts.",
+    "Define a BaselineRunnerConfig interface with fields: repoOwner, repo, branch, problemDescription, model (optional, defaults to env LLM_MODEL). Define a BaselineResult interface with fields: output (ProposalOutput), tokenUsage ({ inputTokens, outputTokens, model }), toolStats ({ toolCallCount, capHit, filesRead }).",
+    "Build a comprehensive system prompt for the baseline that instructs it to produce a full engineering assessment covering ALL four disciplines (architecture, security, performance, product) in a single pass. The prompt should include the ProposalOutput JSON schema description (reuse the same PROPOSAL_SCHEMA_DESC pattern from prompt-builder.ts). It should NOT have a persona - it is a general-purpose senior engineer covering all bases.",
+    "Build the user message including the problem description and the repo grounding hint (reuse buildRepoHint from agent-tool-loop.ts with a generic agent ID, or build a similar hint without persona-specific language).",
+    "Use runProposalToolLoop to execute the baseline call with the same LLM provider, same tools, same 6-call cap. The baseline gets identical tool access to what each individual debate agent gets.",
+    "After the tool loop completes, validate the output using OutputValidatorImpl.validateProposal(). If validation fails, attempt retry logic similar to agent-executor.ts (re-prompt with error feedback, up to 2 retries with tools disabled).",
+    "Export a runBaseline(config: BaselineRunnerConfig) async function that returns BaselineResult. Also export the interfaces for use by the comparison module.",
+    "Create src/lib/baseline-runner.test.ts with unit tests that mock the LLM provider. Test: (1) successful baseline run produces valid ProposalOutput, (2) tool loop is invoked with correct parameters (same model, same tool cap), (3) validation retry logic works on malformed first response, (4) token usage is correctly aggregated from tool loop result."
+  ],
+  "acceptance_criteria": [
+    "src/lib/baseline-runner.ts exports runBaseline function that returns a BaselineResult with valid ProposalOutput",
+    "Baseline uses the exact same 3 tools (list_files, read_file, search_code) with the same 6-call cap as debate agents",
+    "Baseline prompt covers all 4 disciplines (architecture, security, performance, product) explicitly",
+    "Output is validated against the same proposalOutputSchema used by debate agents",
+    "Unit tests pass with mocked LLM provider: npx vitest run src/lib/baseline-runner.test.ts"
+  ],
+  "verification": [
+    "Run npx vitest run src/lib/baseline-runner.test.ts and confirm all tests pass",
+    "Run npx tsc --noEmit and confirm no type errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
