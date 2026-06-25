@@ -1,26 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0d0c;
-  --foreground: #f4f2ed;
-  --background-end: #10120f;
-  --card: #151712;
-  --card-foreground: #f4f2ed;
-  --border: #3a3a32;
-  --muted: #20221d;
-  --muted-foreground: #b6b0a3;
-  --accent: #14b8a6;
+  --background: #07090D;
+  --foreground: #F8FAFC;
+  --background-end: #0D1117;
+  --card: #0D1117;
+  --card-foreground: #F8FAFC;
+  --border: #1F2937;
+  --muted: #111827;
+  --muted-foreground: #94A3B8;
+  --accent: #7C3AED;
   --accent-foreground: #ffffff;
   --success: #22c55e;
-  --warning: #eab308;
-  --danger: #ef4444;
+  --warning: #F59E0B;
+  --danger: #EF4444;
 
   /* Design system color palette */
-  --surface: #151712;
-  --surface-elevated: #1f211b;
-  --text-primary: #f4f2ed;
-  --text-secondary: #b6b0a3;
-  --text-muted: #827c70;
+  --surface: #0D1117;
+  --surface-elevated: #111827;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+
+  /* Brand */
+  --brand-violet: #7C3AED;
+  --violet-hover: #8B5CF6;
+  --violet-soft-bg: rgba(124, 58, 237, 0.12);
+  --violet-glow: rgba(124, 58, 237, 0.24);
+  --code-blue: #38BDF8;
 
   /* Agent colors */
   --agent-senior: #14b8a6;
@@ -59,6 +66,13 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
 
+  /* Brand */
+  --color-brand-violet: var(--brand-violet);
+  --color-violet-hover: var(--violet-hover);
+  --color-violet-soft-bg: var(--violet-soft-bg);
+  --color-violet-glow: var(--violet-glow);
+  --color-code-blue: var(--code-blue);
+
   /* Agent colors */
   --color-agent-senior: var(--agent-senior);
   --color-agent-security: var(--agent-security);
@@ -94,13 +108,18 @@ html[data-theme="light"] {
   --border: #e5e7eb;
   --muted: #f3f4f6;
   --muted-foreground: #4b5563;
-  --accent: #0f766e;
+  --accent: #6D28D9;
   --accent-foreground: #ffffff;
   --surface: #ffffff;
   --surface-elevated: #f3f4f6;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #64748b;
+  --brand-violet: #6D28D9;
+  --violet-hover: #7C3AED;
+  --violet-soft-bg: rgba(109, 40, 217, 0.08);
+  --violet-glow: rgba(109, 40, 217, 0.16);
+  --code-blue: #0284C7;
 }
 
 /* Custom scrollbar for dark mode */

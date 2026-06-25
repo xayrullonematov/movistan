@@ -1,56 +1,66 @@
 "use client";
 
-import AgentDiagram from "./AgentDiagram";
+import { useState } from "react";
 
 export default function HeroSection() {
+  const [repoInput, setRepoInput] = useState("");
+
   const scrollToForm = () => {
     document.getElementById("form")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const scrollToHowItWorks = () => {
-    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+  const handleHeroSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    scrollToForm();
   };
 
   return (
-    <section className="flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center bg-[#0b0d0c] px-4 py-10 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-4xl space-y-5 text-center sm:space-y-8">
-        {/* Hackathon badge */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#3f4338] bg-[#1a1c17] px-4 py-1.5 text-xs font-medium text-gray-300">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          Qwen Cloud Global AI Hackathon · Track 3 — Multi-Agent Collaboration
-        </div>
+    <section className="flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center bg-[var(--background)] px-4 py-10 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-3xl space-y-6 text-center sm:space-y-8">
+        {/* Tagline */}
+        <p className="text-sm font-medium tracking-wide text-[var(--text-muted)] uppercase">
+          Scope your repo before you ship.
+        </p>
 
         {/* Headline */}
-        <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-50 sm:text-4xl md:text-5xl lg:text-6xl">
-          Decision-ready engineering reviews.{" "}
-          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-            Clear risks before you commit.
+        <h1 className="text-3xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-4xl md:text-5xl lg:text-6xl">
+          Find bugs, risks, and fixes in{" "}
+          <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-violet-400 bg-clip-text text-transparent">
+            any GitHub repo
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="mx-auto max-w-3xl text-base leading-relaxed text-gray-300 md:text-xl">
-          Turn architecture, security, performance, and product tradeoffs into a structured report your team can act on.
+        <p className="mx-auto max-w-2xl text-base leading-relaxed text-[var(--text-secondary)] md:text-lg">
+          Paste a repo. Pick what to check. Get a file-level report with evidence-backed fixes.
         </p>
 
-        {/* Agent Diagram */}
-        <div className="py-3 sm:py-8">
-          <AgentDiagram />
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+        {/* Hero repo input */}
+        <form onSubmit={handleHeroSubmit} className="mx-auto flex max-w-xl flex-col gap-3 sm:flex-row sm:gap-2">
+          <input
+            type="text"
+            value={repoInput}
+            onChange={(e) => setRepoInput(e.target.value)}
+            placeholder="github.com/owner/repo"
+            className="min-h-12 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] font-mono focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+            autoComplete="off"
+            spellCheck={false}
+          />
           <button
-            onClick={scrollToForm}
-            className="min-h-11 rounded-lg bg-emerald-500 px-6 py-2.5 text-base font-semibold text-gray-950 transition-colors hover:bg-emerald-400 sm:px-8 sm:py-3.5"
+            type="submit"
+            className="min-h-12 whitespace-nowrap rounded-lg bg-[var(--brand-violet)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)]"
           >
-            Start a review &rarr;
+            Analyze repo &rarr;
           </button>
+        </form>
+
+        {/* Secondary CTA */}
+        <div className="flex items-center justify-center gap-4">
           <button
-            onClick={scrollToHowItWorks}
-            className="min-h-11 px-5 py-2.5 rounded-lg font-medium text-gray-300 hover:text-gray-100 border border-gray-700 hover:border-gray-500 transition-all duration-300 text-base sm:px-6 sm:py-3.5"
+            onClick={() => document.getElementById("sample-report")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] underline underline-offset-4 decoration-[var(--border)]"
           >
-            See the workflow
+            View sample report
           </button>
         </div>
       </div>

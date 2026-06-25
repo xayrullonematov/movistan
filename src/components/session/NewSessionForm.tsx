@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, GitBranch, BookOpen, MessageCircleQuestion, ClipboardCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, GitBranch, BookOpen, MessageCircleQuestion } from "lucide-react";
 import ConstraintInput from "./ConstraintInput";
 import PriorSessionPicker from "./PriorSessionPicker";
 
@@ -19,30 +19,36 @@ function policyToValue(p: ClarificationPolicy): "allow" | "suppress" | number {
   return p;
 }
 
-const templates: { id: string; label: string; problem: string }[] = [
+const reviewTypes: { id: string; label: string; problem: string }[] = [
   {
-    id: "monolith-to-services",
-    label: "Monolith → services",
-    problem:
-      "Should we extract our checkout flow into a separate service? We're a 30-engineer team on a single Rails monolith, ~5M daily requests, deploys take 25 minutes and any checkout change risks the whole app. We want faster release velocity for the checkout team and clearer ownership boundaries, but we've never run multi-service infra. A good outcome is a concrete first step (extract / strangle / stay) with an honest read on what we lose.",
+    id: "security",
+    label: "Find security vulnerabilities",
+    problem: "Scan this repo for security vulnerabilities: auth bypass, injection flaws, secrets in code, insecure dependencies, and misconfigured permissions. Flag the riskiest files first.",
   },
   {
-    id: "auth-strategy",
-    label: "Auth strategy",
-    problem:
-      "We're picking an auth strategy for a new B2B SaaS app: session cookies vs JWT vs a managed identity provider (Auth0/Clerk/WorkOS). Constraints: SOC2 on the roadmap, customers will want SSO/SAML within 12 months, 3 backend engineers, no security specialist on staff. A good outcome is a recommendation, the top two failure modes, and what we're locking ourselves into.",
+    id: "bugs",
+    label: "Find bugs and edge cases",
+    problem: "Find bugs, unhandled edge cases, and logic errors in this codebase. Focus on crash-prone paths, race conditions, null dereferences, and incorrect error handling.",
   },
   {
-    id: "database-scaling",
-    label: "Database scaling",
-    problem:
-      "Our Postgres primary is at 70% CPU during peak and writes are starting to lag. We have ~800GB on a single instance, read-heavy but with hot write tables (orders, events). Options on the table: read replicas, partitioning, moving events to a separate store, or a managed sharding layer. Engineering capacity: one senior engineer for ~6 weeks. A good outcome is a sequenced plan with the cheapest reversible step first.",
+    id: "architecture",
+    label: "Review architecture",
+    problem: "Review the architecture of this repo. Identify coupling issues, unclear boundaries, scaling bottlenecks, and areas where the structure will break as the team or traffic grows.",
   },
   {
-    id: "api-versioning",
-    label: "API versioning",
-    problem:
-      "We need to introduce breaking changes to our public REST API and have ~400 external integrations live. Options: versioned URLs (/v2/...), versioned headers, deprecation windows with sunset headers, or a parallel GraphQL surface. Constraint: we can't break enterprise customers without 90 days notice. A good outcome is a versioning policy we can defend for the next 3 years and a migration playbook for the first breaking change.",
+    id: "production",
+    label: "Check production readiness",
+    problem: "Check if this repo is production-ready. Look for missing error handling, no monitoring/logging, deployment risks, missing tests on critical paths, and configuration issues.",
+  },
+  {
+    id: "explain",
+    label: "Explain this repo",
+    problem: "Explain what this codebase does, how it is structured, what the main entry points are, and how data flows through the system. Summarize at the file and module level.",
+  },
+  {
+    id: "refactor",
+    label: "What should I refactor first?",
+    problem: "Identify the highest-impact refactoring targets in this repo. Prioritize by risk, complexity, and how much they block other improvements. Give concrete file-level recommendations.",
   },
 ];
 
@@ -109,24 +115,38 @@ export default function NewSessionForm() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-        {/* Problem Description */}
+        {/* GitHub Repository - Primary */}
+        <div>
+          <label htmlFor="github-repo" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
+            <GitBranch size={14} className="text-violet-400" />
+            GitHub repository
+          </label>
+          <input
+            id="github-repo"
+            type="text"
+            value={githubRepo}
+            onChange={(e) => setGithubRepo(e.target.value)}
+            placeholder="owner/repo, owner/repo@branch, or full GitHub URL"
+            className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+
+        {/* What to check */}
         <div>
           <label htmlFor="problem" className="block text-sm font-medium text-gray-300 mb-2">
-            What decision should the review cover?
+            What should we check?
           </label>
           <div className="mb-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-              <ClipboardCheck size={12} className="text-emerald-300" />
-              Start from a template:
-            </span>
-            {templates.map((tpl) => (
+            {reviewTypes.map((rt) => (
               <button
-                key={tpl.id}
+                key={rt.id}
                 type="button"
-                onClick={() => setProblemDescription(tpl.problem)}
-                className="min-h-9 rounded-full border border-gray-700 bg-gray-800/70 px-3 text-xs text-gray-200 transition-colors hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                onClick={() => setProblemDescription(rt.problem)}
+                className="min-h-9 rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--brand-violet)] hover:bg-[var(--violet-soft-bg)] hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-violet)]"
               >
-                {tpl.label}
+                {rt.label}
               </button>
             ))}
           </div>
@@ -134,33 +154,12 @@ export default function NewSessionForm() {
             id="problem"
             value={problemDescription}
             onChange={(e) => setProblemDescription(e.target.value)}
-            placeholder="Should we migrate our monolith to microservices? We have 50 engineers, 3M daily requests, and need to ship faster. Current deploy takes 45 minutes..."
-            className="h-32 w-full resize-none rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-base leading-relaxed text-gray-100 placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 sm:h-44"
+            placeholder="Find auth bypass risks and secrets leaking in environment configs..."
+            className="h-32 w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-base leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)] sm:h-36"
             required
           />
-          <p className="mt-1.5 text-sm text-gray-400 sm:mt-2">
-            {problemDescription.length}/2000 &mdash; Be specific: include context, constraints, and what a good outcome looks like.
-          </p>
-        </div>
-
-        {/* GitHub repo grounding (top-level, since it's high-impact) */}
-        <div>
-          <label htmlFor="github-repo" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
-            <GitBranch size={14} className="text-gray-400" />
-            Ground in a GitHub repo <span className="text-sm font-normal text-gray-400">(optional)</span>
-          </label>
-          <input
-            id="github-repo"
-            type="text"
-            value={githubRepo}
-            onChange={(e) => setGithubRepo(e.target.value)}
-            placeholder="vercel/next.js, owner/repo@branch, or full GitHub URL"
-            className="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <p className="mt-1 text-sm text-gray-400">
-            Agents use read-only file access during the proposal stage. Repo contents are used only to ground this decision report.
+          <p className="mt-1.5 text-sm text-[var(--text-muted)] sm:mt-2">
+            {problemDescription.length}/2000 - Be specific: include what files or areas to focus on.
           </p>
         </div>
 
@@ -169,14 +168,14 @@ export default function NewSessionForm() {
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex min-h-11 items-center gap-2 text-sm text-gray-300 hover:text-gray-100 transition-colors"
+            className="flex min-h-11 items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             Advanced options
           </button>
 
           {showAdvanced && (
-            <div className="mt-3 space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 p-3 sm:mt-4 sm:space-y-5 sm:p-4">
+            <div className="mt-3 space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)]/50 p-3 sm:mt-4 sm:space-y-5 sm:p-4">
               {/* Token Budget */}
               <div>
                 <label htmlFor="budget" className="block text-sm font-medium text-gray-300 mb-1">
@@ -189,32 +188,32 @@ export default function NewSessionForm() {
                   onChange={(e) => setTokenBudget(e.target.value)}
                   placeholder="e.g., 100000"
                   min="1000"
-                  className="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
                 />
-                <p className="text-sm text-gray-400 mt-1">
-                  Maximum tokens the debate can consume. Leave empty for unlimited.
+                <p className="text-sm text-[var(--text-muted)] mt-1">
+                  Maximum tokens the review can consume. Leave empty for unlimited.
                 </p>
               </div>
 
               {/* Clarification policy */}
               <div>
                 <label htmlFor="clarification-policy" className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-1">
-                  <MessageCircleQuestion size={14} className="text-gray-400" />
+                  <MessageCircleQuestion size={14} className="text-[var(--text-muted)]" />
                   Clarification policy
                 </label>
                 <select
                   id="clarification-policy"
                   value={clarificationPolicy}
                   onChange={(e) => setClarificationPolicy(e.target.value as ClarificationPolicy)}
-                  className="min-h-11 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  className="min-h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
                 >
-                  <option value="allow">Allow — pause the round whenever agents need clarification</option>
+                  <option value="allow">Allow - pause when agents need clarification</option>
                   <option value="limit-1">Limit to 1 question per stage</option>
                   <option value="limit-3">Limit to 3 questions per stage</option>
-                  <option value="suppress">Suppress — never pause for clarifications</option>
+                  <option value="suppress">Suppress - fully autonomous run</option>
                 </select>
-                <p className="text-sm text-gray-400 mt-1">
-                  Controls whether agents can ask you questions mid-round. Suppress for fully autonomous runs.
+                <p className="text-sm text-[var(--text-muted)] mt-1">
+                  Controls whether agents can ask you questions mid-review.
                 </p>
               </div>
 
@@ -222,23 +221,23 @@ export default function NewSessionForm() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="prior-session" className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
-                    <BookOpen size={14} className="text-gray-400" />
+                    <BookOpen size={14} className="text-[var(--text-muted)]" />
                     Prior session context
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPicker(true)}
-                    className="min-h-9 text-sm text-emerald-300 transition-colors hover:text-emerald-200"
+                    className="min-h-9 text-sm text-violet-400 transition-colors hover:text-violet-300"
                   >
-                    Import from session…
+                    Import from session...
                   </button>
                 </div>
                 <textarea
                   id="prior-session"
                   value={priorSessionSummary}
                   onChange={(e) => setPriorSessionSummary(e.target.value)}
-                  placeholder="Paste or import a prior debate's summary so agents continue from where you left off."
-                  className="h-24 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm leading-relaxed text-gray-100 placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 sm:h-28"
+                  placeholder="Paste or import a prior session summary so agents continue from where you left off."
+                  className="h-24 w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)] sm:h-28"
                 />
               </div>
 
@@ -263,9 +262,9 @@ export default function NewSessionForm() {
         <button
           type="submit"
           disabled={isSubmitting || !problemDescription.trim()}
-          className="min-h-12 w-full rounded-lg px-6 py-3.5 text-base font-semibold bg-emerald-500 text-gray-950 hover:bg-emerald-400 disabled:bg-gray-700 disabled:text-gray-400 transition-colors disabled:shadow-none"
+          className="min-h-12 w-full rounded-lg px-6 py-3.5 text-base font-semibold bg-[var(--brand-violet)] text-white hover:bg-[var(--violet-hover)] disabled:bg-gray-700 disabled:text-gray-400 transition-colors disabled:shadow-none"
         >
-          {isSubmitting ? "Starting decision review..." : "Start Review"}
+          {isSubmitting ? "Analyzing..." : "Analyze repo"}
         </button>
       </form>
 

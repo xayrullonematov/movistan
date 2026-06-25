@@ -48,14 +48,13 @@ export default function Home() {
       <motion.div {...fadeInUp}>
         <section id="form" className="px-4 py-14 sm:px-6 sm:py-24">
           <div className="max-w-2xl mx-auto">
-            <h2 className="mb-3 text-center text-2xl font-bold text-gray-50 sm:mb-4 sm:text-3xl">
-              Start a Decision Review
+            <h2 className="mb-3 text-center text-2xl font-bold text-[var(--text-primary)] sm:mb-4 sm:text-3xl">
+              Start a new review
             </h2>
-            <p className="mb-6 text-center text-sm text-gray-300 sm:mb-10 sm:text-base">
-              Describe the decision, tradeoff, or risk review you need. The first
-              round starts as soon as the workspace opens.
+            <p className="mb-6 text-center text-sm text-[var(--text-secondary)] sm:mb-10 sm:text-base">
+              Paste a repo, pick what to check, get results.
             </p>
-            <div className="rounded-lg border border-[#34362f] bg-[#151712] p-4 sm:p-6 md:p-8">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 md:p-8">
               <NewSessionForm />
             </div>
           </div>
@@ -74,25 +73,21 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-[#2f312b] px-4 py-8 sm:px-6 sm:py-12">
+      <footer className="border-t border-[var(--border)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-300">AI Engineering Room</span>
-              <span className="text-gray-600">·</span>
-              <span className="text-xs text-gray-500">Multi-Agent Decision Intelligence</span>
+              <span className="text-sm font-medium text-[var(--text-secondary)]">RepoScope</span>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-500">
-              <span>4 LLM Agents</span>
-              <span className="text-gray-700">•</span>
-              <span>Structured Debate Rounds</span>
-              <span className="text-gray-700">•</span>
-              <span>Event-Sourced Architecture</span>
-              <span className="text-gray-700">•</span>
-              <span>Powered by Qwen</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
+              <span>File-level findings</span>
+              <span className="text-gray-700">&bull;</span>
+              <span>Evidence-backed fixes</span>
+              <span className="text-gray-700">&bull;</span>
+              <span>Powered by AI agents</span>
             </div>
-            <p className="text-xs text-gray-600">
-              Built with Next.js 16, Prisma, Zod, and the DashScope OpenAI-compatible API.
+            <p className="text-xs text-[var(--text-muted)]">
+              Built with Next.js, Prisma, and Zod.
             </p>
           </div>
         </div>

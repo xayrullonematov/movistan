@@ -15,8 +15,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AI Engineering Room",
-  description: "Multi-agent engineering collaboration platform with structured debate and consensus synthesis",
+  title: "RepoScope",
+  description: "AI repo reviews with evidence. Paste a GitHub repo, ask what to check, get a file-level report you can fix.",
 };
 
 export default async function RootLayout({
