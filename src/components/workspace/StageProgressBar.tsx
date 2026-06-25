@@ -50,20 +50,20 @@ export default function StageProgressBar({
       : `Round ${currentRound}: waiting for next action`;
 
   return (
-    <div className="w-full px-4 py-3 bg-gray-900 border-b border-gray-700">
+    <div className="w-full border-b border-[#34362f] bg-[#151712] px-3 py-2 sm:px-4 sm:py-3">
       <div className="flex items-center justify-between gap-3 sm:hidden">
         <div className="flex min-w-0 items-center gap-2">
           {showIntervention ? (
             <Hand size={17} className="shrink-0 text-yellow-300" />
           ) : currentStage ? (
-            <RefreshCw size={17} className="shrink-0 text-blue-300" />
+            <RefreshCw size={17} className="shrink-0 text-emerald-300" />
           ) : (
             <MessageSquare size={17} className="shrink-0 text-gray-300" />
           )}
           <span className="truncate text-sm font-medium text-gray-100">{currentLabel}</span>
         </div>
-        <span className="shrink-0 text-sm text-gray-400">
-          {completedStages.length}/4 done
+        <span className="shrink-0 rounded-full border border-gray-700 bg-gray-950/50 px-2 py-0.5 text-xs text-gray-300">
+          {completedStages.length}/4
         </span>
       </div>
       <div className="hidden items-center gap-1 sm:flex">
@@ -80,15 +80,15 @@ export default function StageProgressBar({
                     state === "completed"
                       ? "bg-green-500/15 border border-green-600/50"
                       : state === "active"
-                        ? "bg-blue-500/15 border border-blue-500/50"
+                        ? "bg-emerald-500/10 border border-emerald-500/50"
                         : "bg-gray-800/50 border border-gray-700"
                   }
                 `}
               >
-                {/* Active segment animated gradient fill */}
+                {/* Active segment fill */}
                 {state === "active" && (
                   <div className="absolute inset-0 rounded-lg overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-blue-500/20 animate-[gradient-shift_3s_ease_infinite] bg-[length:200%_100%]" />
+                    <div className="absolute inset-0 bg-emerald-500/5" />
                   </div>
                 )}
 
@@ -100,7 +100,7 @@ export default function StageProgressBar({
                       size={16}
                       className={`shrink-0 ${
                         state === "active"
-                          ? "text-blue-400 animate-pulse"
+                          ? "text-emerald-300 animate-pulse"
                           : "text-gray-500"
                       }`}
                     />
@@ -110,7 +110,7 @@ export default function StageProgressBar({
                       state === "completed"
                         ? "text-green-400"
                         : state === "active"
-                          ? "text-blue-300"
+                          ? "text-emerald-300"
                           : "text-gray-500"
                     }`}
                   >

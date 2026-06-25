@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ArtifactState, ArtifactVersion } from "@/types/domain";
+import type { AgentType, ArtifactState, ArtifactType, ArtifactVersion } from "@/types/domain";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface ArtifactDetailProps {
@@ -10,6 +10,22 @@ interface ArtifactDetailProps {
   onClose: () => void;
   onStatusChange?: () => void;
 }
+
+const typeLabels: Record<ArtifactType, string> = {
+  decision: "Decision",
+  risk: "Risk",
+  assumption: "Assumption",
+  tradeoff: "Tradeoff",
+  "open-question": "Open question",
+  recommendation: "Recommendation",
+};
+
+const agentLabels: Record<AgentType, string> = {
+  "senior-engineer": "Senior",
+  "security-engineer": "Security",
+  "performance-engineer": "Performance",
+  "product-engineer": "Product",
+};
 
 export default function ArtifactDetail({ artifact, sessionId, onClose, onStatusChange }: ArtifactDetailProps) {
   const [versions, setVersions] = useState<ArtifactVersion[] | null>(null);
@@ -51,14 +67,14 @@ export default function ArtifactDetail({ artifact, sessionId, onClose, onStatusC
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-2xl max-h-[80vh] bg-gray-900 border border-gray-700 rounded-xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-400">
-              {artifact.type}
-            </span>
-            <h3 className="text-base font-semibold text-gray-100">{artifact.title}</h3>
+        <div className="flex items-start justify-between gap-4 border-b border-gray-700 px-5 py-3">
+          <div className="min-w-0">
+            <p className="text-xs text-gray-400">
+              {typeLabels[artifact.type]} / {artifact.status}
+            </p>
+            <h3 className="mt-1 line-clamp-2 text-base font-semibold text-gray-100">{artifact.title}</h3>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-lg">
+          <button onClick={onClose} className="shrink-0 text-lg text-gray-400 hover:text-gray-200">
             ✕
           </button>
         </div>
@@ -69,15 +85,11 @@ export default function ArtifactDetail({ artifact, sessionId, onClose, onStatusC
 
           {/* Contributors */}
           {artifact.contributors.length > 0 && (
-            <div className="pt-3 border-t border-gray-700">
-              <p className="text-xs text-gray-500 mb-1">Contributors</p>
-              <div className="flex flex-wrap gap-1">
-                {artifact.contributors.map((c) => (
-                  <span key={c} className="text-xs px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300">
-                    {c}
-                  </span>
-                ))}
-              </div>
+            <div className="border-t border-gray-700 pt-3">
+              <p className="text-xs text-gray-500">Contributors</p>
+              <p className="mt-1 text-sm text-gray-300">
+                {artifact.contributors.map((c) => agentLabels[c] ?? c).join(", ")}
+              </p>
             </div>
           )}
 

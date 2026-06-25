@@ -1,0 +1,6 @@
+{
+  "sessionId": "cmqnt953z00005ep3kw2eezve",
+  "repo": "vercel/nextjs-subscription-payments",
+  "problem": "Audit this Next.js subscription payments app. Each agent should focus on their area: security (auth flows, middleware), performance (query patterns, API handlers), product (user-facing forms and pages), and architecture (code organization and patterns).",
+  "elapsedSeconds": 150.1
+}

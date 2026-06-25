@@ -1,0 +1,89 @@
+{
+  "output": {
+    "summary": "Comprehensive audit of a Next.js subscription payments application covering security, performance, product, and architecture concerns.",
+    "recommendations": [
+      "Implement robust authentication using NextAuth.js or similar with secure session management and CSRF protection.",
+      "Add rate limiting and input validation to all API routes handling payments or user data.",
+      "Use React Hook Form with Zod validation for all user-facing forms to improve UX and prevent invalid submissions.",
+      "Adopt a layered architecture with clear separation between API routes, business logic, and data access layers.",
+      "Optimize database queries by selecting only required fields and adding appropriate indexes on frequently queried columns.",
+      "Cache static and semi-static content (e.g., pricing pages) using ISR or CDN caching strategies.",
+      "Ensure all client-side error messages are user-friendly and do not leak internal system details.",
+      "Store sensitive configuration (API keys, webhook secrets) in environment variables and never expose them to the client."
+    ],
+    "risks": [
+      {
+        "description": "Missing or weak authentication/authorization could allow unauthorized access to subscription management.",
+        "severity": "high",
+        "mitigation": "Enforce authenticated sessions for all payment-related actions and validate user ownership of resources."
+      },
+      {
+        "description": "N+1 query issues in API handlers may degrade performance under load.",
+        "severity": "medium",
+        "mitigation": "Use batch loading or optimized joins; consider Prisma’s include/select features if using Prisma ORM."
+      },
+      {
+        "description": "Poor form validation may lead to failed payments or confusing user errors.",
+        "severity": "medium",
+        "mitigation": "Implement real-time validation with clear error messaging and auto-formatting (e.g., for credit card inputs)."
+      },
+      {
+        "description": "Tight coupling between UI components and business logic reduces maintainability.",
+        "severity": "low",
+        "mitigation": "Extract business rules into service modules and keep pages/components focused on presentation."
+      }
+    ],
+    "assumptions": [
+      "The app uses a modern Next.js version (>=13) with App Router.",
+      "Payment processing is handled via a third-party provider (e.g., Stripe).",
+      "User data and subscriptions are persisted in a relational or document database.",
+      "Authentication is implemented but may lack comprehensive security hardening."
+    ],
+    "confidence": 0.85,
+    "artifactSuggestions": [
+      {
+        "type": "decision",
+        "title": "Authentication Strategy",
+        "content": "Use NextAuth.js with JWT or database sessions, secured HTTP-only cookies, and strict callback URL validation."
+      },
+      {
+        "type": "risk",
+        "title": "Webhook Security",
+        "content": "Unverified payment webhooks could lead to fraudulent subscription updates. Always verify signatures."
+      },
+      {
+        "type": "recommendation",
+        "title": "Data Fetching Pattern",
+        "content": "Use server components for initial page loads where possible to reduce client bundle size and improve SEO."
+      },
+      {
+        "type": "tradeoff",
+        "title": "Client vs Server Validation",
+        "content": "Client validation improves UX but must always be backed by server validation for security."
+      }
+    ],
+    "references": [],
+    "needsClarification": true,
+    "clarificationQuestions": [
+      "Which payment processor is being used (e.g., Stripe, PayPal)?",
+      "Is the app using Pages Router or App Router?",
+      "Are there existing authentication mechanisms in place?",
+      "What database or ORM is currently implemented?"
+    ]
+  },
+  "tokenUsage": {
+    "inputTokens": 18570,
+    "outputTokens": 924,
+    "model": "qwen3-max"
+  },
+  "toolStats": {
+    "toolCallCount": 6,
+    "capHit": true,
+    "filesRead": [
+      "middleware.ts",
+      "utils/supabase/middleware.ts",
+      "app/api/webhooks/route.ts",
+      "utils/supabase/admin.ts"
+    ]
+  }
+}

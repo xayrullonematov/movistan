@@ -55,14 +55,14 @@ export function KeyboardShortcutsHelpProvider() {
         {grouped.map(({ scope, items }) =>
           items.length === 0 ? null : (
             <div key={scope}>
-              <p className="mb-2 text-[11px] uppercase tracking-wider text-gray-500">
+              <p className="mb-2 text-xs uppercase tracking-wider text-gray-500">
                 {scopeLabel[scope]}
               </p>
               <ul className="divide-y divide-gray-800 overflow-hidden rounded-md border border-gray-800">
                 {items.map((s) => (
                   <li key={s.id} className="flex items-center justify-between gap-3 px-3 py-2">
                     <span className="text-sm text-gray-300">{s.description}</span>
-                    <kbd className="rounded-md border border-gray-700 bg-gray-950 px-2 py-0.5 text-[11px] font-mono text-gray-300">
+                    <kbd className="rounded-md border border-gray-700 bg-gray-950 px-2 py-0.5 text-xs font-mono text-gray-300">
                       {s.display}
                     </kbd>
                   </li>
@@ -71,7 +71,7 @@ export function KeyboardShortcutsHelpProvider() {
             </div>
           ),
         )}
-        <p className="text-[11px] text-gray-500">
+        <p className="text-xs text-gray-500">
           Shortcuts are ignored while typing in inputs, textareas, or other editable fields.
         </p>
       </div>

@@ -76,19 +76,19 @@ export default function AgentStatusStream({
   const { label, tone } = deriveLabel(lastEvent, currentStage);
 
   const toneClass = {
-    active: "bg-blue-500/15 text-blue-300 border-blue-500/40",
+    active: "bg-emerald-500/10 text-emerald-300 border-emerald-500/40",
     complete: "bg-green-500/15 text-green-300 border-green-500/40",
     idle: "bg-gray-800/60 text-gray-400 border-gray-700",
   }[tone];
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${toneClass}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${toneClass}`}
       aria-label={`${agent} status: ${label}`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          tone === "active" ? "animate-pulse bg-blue-400" : tone === "complete" ? "bg-green-400" : "bg-gray-500"
+          tone === "active" ? "animate-pulse bg-emerald-400" : tone === "complete" ? "bg-green-400" : "bg-gray-500"
         }`}
       />
       <span>{label}</span>

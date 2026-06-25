@@ -14,9 +14,9 @@ interface NotificationBannerProps {
 const typeConfig = {
   info: {
     icon: Info,
-    bgClass: "bg-blue-950/80 border-blue-700/50",
-    textClass: "text-blue-300",
-    iconColor: "text-blue-400",
+    bgClass: "bg-emerald-950/70 border-emerald-700/50",
+    textClass: "text-emerald-300",
+    iconColor: "text-emerald-400",
   },
   success: {
     icon: CheckCircle,
@@ -32,9 +32,9 @@ const typeConfig = {
   },
   action: {
     icon: ArrowRight,
-    bgClass: "bg-violet-950/80 border-violet-700/50",
-    textClass: "text-violet-300",
-    iconColor: "text-violet-400",
+    bgClass: "bg-emerald-950/70 border-emerald-700/50",
+    textClass: "text-emerald-300",
+    iconColor: "text-emerald-400",
   },
 };
 

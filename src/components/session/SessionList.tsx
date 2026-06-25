@@ -63,57 +63,50 @@ export default function SessionList({ sessions, loading = false }: SessionListPr
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-        Recent Sessions
-      </h3>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-gray-400">
+          Continue a session
+        </h3>
+        <button
+          onClick={() => router.push("/sessions")}
+          className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+        >
+          View all &rarr;
+        </button>
+      </div>
 
-      <div className="border border-gray-700 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-700 bg-gray-800/50">
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Problem
-              </th>
-              <th className="text-center px-3 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-center px-3 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rounds
-              </th>
-              <th className="text-right px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Time
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800">
-            {sessions.map((session) => (
-              <tr
-                key={session.id}
-                onClick={() => router.push(`/sessions/${session.id}`)}
-                className="hover:bg-gray-800/70 cursor-pointer transition-colors"
-              >
-                <td className="px-4 py-3">
-                  <span className="text-gray-200 line-clamp-1">
-                    {(session.title || session.problemDescription || "Untitled").slice(0, 80)}
-                  </span>
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <StatusBadge status={session.status} />
-                </td>
-                <td className="px-3 py-3 text-center text-gray-400">
-                  {session.currentRound}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">
-                  {timeAgo(session.createdAt)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid gap-2">
+        {sessions.slice(0, 3).map((session) => (
+          <button
+            key={session.id}
+            onClick={() => router.push(`/sessions/${session.id}`)}
+            className="flex items-center gap-3 rounded-lg border border-[#2f312b] bg-[#151712] px-4 py-3 text-left transition-all hover:border-emerald-500/30 hover:bg-[#1a1c17]"
+          >
+            <StatusDot status={session.status} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-200">
+                {(session.title || session.problemDescription || "Untitled").slice(0, 60)}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Round {session.currentRound} · {timeAgo(session.createdAt)}
+              </p>
+            </div>
+            <StatusBadge status={session.status} />
+          </button>
+        ))}
       </div>
     </div>
   );
+}
+
+function StatusDot({ status }: { status: "active" | "paused" | "completed" }) {
+  const colors = {
+    active: "bg-green-400",
+    paused: "bg-yellow-400",
+    completed: "bg-blue-400",
+  };
+  return <span className={`h-2 w-2 shrink-0 rounded-full ${colors[status]}`} />;
 }
 
 function StatusBadge({ status }: { status: "active" | "paused" | "completed" }) {

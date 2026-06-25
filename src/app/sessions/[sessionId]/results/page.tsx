@@ -1,123 +1,81 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
+import Link from "next/link";
 import useSWR from "swr";
+import { ArrowLeft } from "lucide-react";
+import type { SessionState } from "@/types/domain";
+import ResultsDashboard, {
+  ResultsDashboardSkeleton,
+} from "@/components/workspace/ResultsDashboard";
+import { toast } from "@/hooks/useToast";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const statusBadge = (status: string) => {
-  const colors: Record<string, string> = {
-    accepted: "bg-green-600 text-green-100",
-    rejected: "bg-red-600 text-red-100",
-    draft: "bg-gray-600 text-gray-100",
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || colors.draft}`}>
-      {status}
-    </span>
-  );
-};
-
-export default function ResultsPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default function ResultsPage({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}) {
   const { sessionId } = use(params);
-  const { data, error, isLoading } = useSWR(`/api/sessions/${sessionId}/results`, fetcher);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="text-gray-400">Loading results...</span>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 mb-2">Failed to load results</p>
-          <p className="text-gray-500 text-sm">{error?.message || "Results not found"}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { session, consensus, artifacts, summary } = data;
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">{session.problemDescription.slice(0, 100)}</h1>
-          <div className="flex gap-4 mt-2 text-sm text-gray-400">
-            <span>Rounds: {summary.roundCount}</span>
-            <span>Artifacts: {summary.artifactCount} ({summary.acceptedCount} accepted)</span>
-            <span>Tokens: {session.totalTokens?.toLocaleString() ?? "—"}</span>
-            <span>Cost: ${session.estimatedCostUsd?.toFixed(4) ?? "—"}</span>
-          </div>
-        </div>
-        <DownloadButton sessionId={sessionId} />
-      </div>
-
-      {/* Consensus confidence */}
-      {consensus?.overallConfidence != null && (
-        <div className="mb-6 text-sm text-gray-400">
-          Consensus confidence: <span className="text-white font-medium">{Math.round(consensus.overallConfidence * 100)}%</span>
-        </div>
-      )}
-
-      {/* Artifacts grouped by type */}
-      {Object.entries(artifacts as Record<string, Array<{ id: string; title: string; status: string; content: string }>>)
-        .filter(([, items]) => items.length > 0)
-        .map(([type, items]) => (
-          <section key={type} className="mb-8">
-            <h2 className="text-lg font-semibold capitalize mb-3">{type}</h2>
-            <div className="space-y-3">
-              {items.map((artifact) => (
-                <div key={artifact.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium">{artifact.title}</span>
-                    {statusBadge(artifact.status)}
-                  </div>
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">{artifact.content}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )
-      )}
-    </div>
+  const { data, error, isLoading } = useSWR<SessionState>(
+    `/api/sessions/${sessionId}`,
+    fetcher,
   );
-}
 
-function DownloadButton({ sessionId }: { sessionId: string }) {
-  const [state, setState] = useState<"idle" | "loading" | "done">("idle");
-
-  const handleDownload = async () => {
-    setState("loading");
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}/results/markdown`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] || "results.md";
-      a.click();
-      URL.revokeObjectURL(url);
-      setState("done");
-      setTimeout(() => setState("idle"), 2000);
-    } catch {
-      setState("idle");
+  async function handleExport() {
+    const res = await fetch(`/api/sessions/${sessionId}/results/markdown`);
+    if (!res.ok) {
+      toast.error({ message: "Export failed", description: "Couldn't generate the report. Please try again." });
+      return;
     }
-  };
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download =
+      res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] ??
+      `session-${sessionId}-report.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <button
-      onClick={handleDownload}
-      disabled={state === "loading"}
-      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded text-sm font-medium"
-    >
-      {state === "loading" ? "Downloading..." : state === "done" ? "✓ Downloaded" : "Download Markdown"}
-    </button>
+    <div className="mx-auto flex h-[calc(100svh-4rem)] max-w-4xl flex-col px-4 py-6 sm:px-6">
+      <Link
+        href={`/sessions/${sessionId}`}
+        className="inline-flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-gray-100"
+      >
+        <ArrowLeft size={14} />
+        Back to session
+      </Link>
+
+      <header className="mt-4 mb-2">
+        <h1 className="text-xl font-semibold text-gray-100">Decision report</h1>
+        {data && (
+          <p className="mt-1 truncate text-sm text-gray-400">
+            {data.problemDescription.slice(0, 140)}
+            {data.problemDescription.length > 140 ? "…" : ""}
+          </p>
+        )}
+      </header>
+
+      <div className="mt-2 flex-1 min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900/40">
+        {isLoading ? (
+          <ResultsDashboardSkeleton />
+        ) : error || !data ? (
+          <div className="flex h-full items-center justify-center p-8 text-center">
+            <div>
+              <p className="text-base font-medium text-red-300">Couldn&apos;t load the report</p>
+              <p className="mt-2 text-sm text-gray-400">
+                {error instanceof Error ? error.message : "Session not found"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ResultsDashboard session={data} onExport={handleExport} />
+        )}
+      </div>
+    </div>
   );
 }

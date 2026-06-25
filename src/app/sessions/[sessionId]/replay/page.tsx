@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ReplayScrubber from "@/components/workspace/ReplayScrubber";
 
 export const metadata: Metadata = {
-  title: "Session replay — AI Engineering Room",
+  title: "Decision history - AI Engineering Room",
 };
 
 interface ReplayPageProps {
@@ -25,9 +25,9 @@ export default async function SessionReplayPage({ params }: ReplayPageProps) {
       </Link>
 
       <header className="mt-4">
-        <h1 className="text-xl font-semibold text-gray-100">Session replay</h1>
+        <h1 className="text-xl font-semibold text-gray-100">Decision history</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Step through the event log to inspect the projected session state at any point.
+          Review the milestones that shaped the final recommendation.
         </p>
       </header>
 

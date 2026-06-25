@@ -13,7 +13,7 @@ interface ResultsDashboardProps {
 
 export function ResultsDashboardSkeleton() {
   return (
-    <div className="h-full overflow-y-auto px-4 py-4 space-y-5">
+    <div className="h-full overflow-y-auto px-3 py-3 space-y-3 sm:px-4 sm:py-4 sm:space-y-5">
       <Skeleton className="h-10 w-full rounded-lg" />
       <Skeleton className="h-28 w-full rounded-xl" />
       <div className="space-y-2">
@@ -25,17 +25,10 @@ export function ResultsDashboardSkeleton() {
   );
 }
 
-const severityColors: Record<Severity, string> = {
-  high: "bg-red-500/15 text-red-400 border-red-600/50",
-  medium: "bg-amber-500/15 text-amber-400 border-amber-600/50",
-  low: "bg-green-500/15 text-green-400 border-green-600/50",
-};
-
-const agentDotColors: Record<AgentType, string> = {
-  "senior-engineer": "bg-blue-500",
-  "security-engineer": "bg-red-500",
-  "performance-engineer": "bg-amber-500",
-  "product-engineer": "bg-violet-500",
+const severityTextColors: Record<Severity, string> = {
+  high: "text-red-300",
+  medium: "text-amber-300",
+  low: "text-green-300",
 };
 
 const agentLabels: Record<AgentType, string> = {
@@ -84,58 +77,76 @@ function ConsensusMeter({
   };
 
   return (
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4">
-      <h3 className="text-sm font-medium text-gray-300 mb-3">
-        Consensus Level
-      </h3>
-      <div className="flex items-center gap-4">
-        <div className="relative w-20 h-20">
-          {/* Circular gauge */}
-          <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-            <circle
-              cx="40"
-              cy="40"
-              r="34"
-              fill="none"
-              stroke="#374151"
-              strokeWidth="6"
-            />
-            <circle
-              cx="40"
-              cy="40"
-              r="34"
-              fill="none"
-              stroke={percentage >= 75 ? "#22c55e" : percentage >= 50 ? "#f59e0b" : "#ef4444"}
-              strokeWidth="6"
-              strokeDasharray={`${(percentage / 100) * 213.6} 213.6`}
-              strokeLinecap="round"
-              className="transition-all duration-700"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className={`text-lg font-bold ${getColor(percentage)}`}>
-              {percentage}%
-            </span>
-          </div>
+    <>
+      <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 sm:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-gray-300">Consensus</span>
+          <span className={`text-sm font-bold ${getColor(percentage)}`}>{percentage}%</span>
         </div>
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400">Agreement</span>
-            <span className="text-green-400 font-mono">{agreements}</span>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-xs text-gray-400">
+          <span>{agreements} agreements</span>
+          <span>{disagreements} disagreements</span>
+        </div>
+      </div>
+
+      <div className="hidden rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:block">
+        <h3 className="text-sm font-medium text-gray-300 mb-3">
+          Consensus Level
+        </h3>
+        <div className="flex items-center gap-4">
+          <div className="relative w-20 h-20">
+            <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                fill="none"
+                stroke="#374151"
+                strokeWidth="6"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                fill="none"
+                stroke={percentage >= 75 ? "#22c55e" : percentage >= 50 ? "#f59e0b" : "#ef4444"}
+                strokeWidth="6"
+                strokeDasharray={`${(percentage / 100) * 213.6} 213.6`}
+                strokeLinecap="round"
+                className="transition-all duration-700"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={`text-lg font-bold ${getColor(percentage)}`}>
+                {percentage}%
+              </span>
+            </div>
           </div>
-          <div className="h-1.5 rounded-full bg-gray-700 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400">Disagreement</span>
-            <span className="text-red-400 font-mono">{disagreements}</span>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-400">Agreement</span>
+              <span className="text-green-400 font-mono">{agreements}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-700 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${getBarColor(percentage)}`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-400">Disagreement</span>
+              <span className="text-red-400 font-mono">{disagreements}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -153,31 +164,62 @@ export default function ResultsDashboard({
   }
 
   if (!consensus) {
+    const hasArtifacts = session.artifacts.length > 0;
+    const acceptedArtifacts = session.artifacts.filter(a => a.status === "accepted");
+    const draftArtifacts = session.artifacts.filter(a => a.status === "draft");
+
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="text-center max-w-sm">
-          <div className="w-12 h-12 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-6 h-6 text-gray-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </div>
-          <p className="text-gray-200 text-base font-medium">
-            No decision report yet.
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            The report appears after agents reach consensus: recommendations, risks, open questions, and next steps.
-          </p>
+      <div className="h-full overflow-y-auto px-3 py-3 space-y-4 sm:px-4 sm:py-4 sm:space-y-5">
+        {/* Problem statement — always visible */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-50 sm:text-xl">Decision Report</h2>
+          <p className="mt-2 text-sm leading-relaxed text-gray-300">{session.problemDescription}</p>
         </div>
+
+        {/* Constraints if any */}
+        {session.constraints.length > 0 && (
+          <div>
+            <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Constraints</h3>
+            <ul className="space-y-1">
+              {session.constraints.map((c, i) => (
+                <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">—</span>
+                  <span>{c.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Early artifacts — show what agents have produced so far */}
+        {hasArtifacts && (
+          <div>
+            <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+              Findings so far
+            </h3>
+            <div className="space-y-2">
+              {[...acceptedArtifacts, ...draftArtifacts].slice(0, 5).map((a) => (
+                <div key={a.id} className="rounded-lg border border-gray-700/50 bg-gray-900/40 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase">{a.type}</span>
+                    {a.status === "accepted" && <span className="text-[10px] text-green-400">✓ accepted</span>}
+                  </div>
+                  <p className="mt-1 text-sm font-medium text-gray-200">{a.title}</p>
+                  <p className="mt-1 text-sm text-gray-400 line-clamp-2">{a.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Progress note */}
+        {!hasArtifacts && (
+          <div className="rounded-lg border border-gray-700/50 bg-gray-800/30 px-4 py-3 text-center">
+            <p className="text-sm text-gray-400">
+              The full report will appear here after the first round completes.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -192,27 +234,24 @@ export default function ResultsDashboard({
   const sortedDecisions = [...(consensus.recommendedDecisions || [])].sort(
     (a, b) => b.confidence - a.confidence
   );
-  const cappedDecisions = showAllDecisions ? sortedDecisions : sortedDecisions.slice(0, 5);
-  const hasMoreDecisions = sortedDecisions.length > 5;
+  const visibleLimit = 3;
+  const cappedDecisions = showAllDecisions ? sortedDecisions : sortedDecisions.slice(0, visibleLimit);
+  const hasMoreDecisions = sortedDecisions.length > visibleLimit;
 
   // Sort risks by severity: high > medium > low
   const severityOrder: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
   const sortedRisks = [...(consensus.identifiedRisks || [])].sort(
     (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
   );
-  const cappedRisks = showAllRisks ? sortedRisks : sortedRisks.slice(0, 5);
-  const hasMoreRisks = sortedRisks.length > 5;
+  const cappedRisks = showAllRisks ? sortedRisks : sortedRisks.slice(0, visibleLimit);
+  const hasMoreRisks = sortedRisks.length > visibleLimit;
 
   return (
-    <div className="h-full overflow-y-auto px-4 py-4 space-y-5">
-      <header>
-        <h2 className="text-xl font-semibold text-gray-50">Decision Report</h2>
-        <p className="mt-1 text-sm text-gray-300">Recommendations, risks, and unresolved questions from the latest consensus.</p>
-      </header>
-
+    <div className="h-full overflow-y-auto px-3 py-3 space-y-3 sm:px-4 sm:py-4 sm:space-y-5">
       {/* Headline / TL;DR */}
-      <div className="rounded-lg bg-blue-500/5 border border-blue-600/30 px-4 py-3">
-        <p className="text-sm font-medium text-blue-300">{headline}</p>
+      <div className="rounded-lg bg-emerald-500/8 border border-emerald-600/30 px-4 py-3">
+        <p className="text-base font-semibold text-emerald-100">{headline}</p>
+        <p className="mt-1 text-sm text-gray-400 line-clamp-2">{session.problemDescription}</p>
       </div>
 
       {/* Consensus Meter */}
@@ -241,7 +280,7 @@ export default function ResultsDashboard({
                     {formatConfidence(decision.confidence)}%
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 mt-2 leading-relaxed">
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-300 sm:line-clamp-none">
                   {decision.description}
                 </p>
               </div>
@@ -250,7 +289,7 @@ export default function ResultsDashboard({
           {hasMoreDecisions && (
             <button
               onClick={() => setShowAllDecisions(!showAllDecisions)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-blue-300 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 rounded"
               aria-expanded={showAllDecisions}
             >
               {showAllDecisions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -266,18 +305,19 @@ export default function ResultsDashboard({
           <h3 className="text-sm font-medium text-gray-300 mb-3">
             Risk Register
           </h3>
-          <div className="space-y-3 sm:hidden">
+          <div className="space-y-2 sm:hidden">
             {cappedRisks.map((risk, i) => (
               <div key={i} className="rounded-lg border border-gray-700 bg-gray-900/45 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-md border px-2 py-1 text-sm font-medium ${severityColors[risk.severity]}`}>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className={`font-medium ${severityTextColors[risk.severity]}`}>
                     {severityLabels[risk.severity]}
                   </span>
-                  <span className="text-sm text-gray-400">
+                  <span aria-hidden="true" className="text-gray-600">/</span>
+                  <span className="text-gray-400">
                     Raised by {risk.raisedBy.map((agentId) => agentLabels[agentId]).join(", ")}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-gray-200">{risk.description}</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-200">{risk.description}</p>
               </div>
             ))}
           </div>
@@ -303,22 +343,14 @@ export default function ResultsDashboard({
                       {risk.description}
                     </td>
                     <td className="px-3 py-2">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${severityColors[risk.severity]}`}
-                      >
+                      <span className={`text-sm font-medium ${severityTextColors[risk.severity]}`}>
                         {severityLabels[risk.severity]}
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-1">
-                        {risk.raisedBy.map((agentId) => (
-                          <div
-                            key={agentId}
-                            className={`w-2.5 h-2.5 rounded-full ${agentDotColors[agentId]}`}
-                            title={agentId}
-                          />
-                        ))}
-                      </div>
+                      <span className="text-gray-300">
+                        {risk.raisedBy.map((agentId) => agentLabels[agentId]).join(", ")}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -328,7 +360,7 @@ export default function ResultsDashboard({
           {hasMoreRisks && (
             <button
               onClick={() => setShowAllRisks(!showAllRisks)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-blue-300 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 rounded"
               aria-expanded={showAllRisks}
             >
               {showAllRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -360,7 +392,7 @@ export default function ResultsDashboard({
 
       {/* Export Button */}
       {onExport && (
-        <div className="pt-3 border-t border-gray-700">
+        <div className="border-t border-gray-700 pt-2 sm:pt-3">
           <button
             onClick={onExport}
             className="flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors w-full justify-center"

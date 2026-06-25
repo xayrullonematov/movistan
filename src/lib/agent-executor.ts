@@ -90,6 +90,20 @@ async function callWithRetry<T>(params: {
     const response = await llmProvider.complete(effectiveRequest, model);
     lastResponse = response;
 
+    // If output was truncated (finish_reason: length), retry with 2x max_tokens
+    if (response.finishReason === "length" && attempt < MAX_VALIDATION_RETRIES) {
+      const currentMax = effectiveRequest.maxTokens ?? 12288;
+      effectiveRequest = { ...effectiveRequest, maxTokens: Math.min(currentMax * 2, 32768) };
+      lastErrors = ["Output was truncated (max_tokens reached). Retrying with larger budget."];
+      await tokenBudgetManager.trackUsage(sessionId, {
+        agentId, round, stage,
+        inputTokens: response.inputTokens,
+        outputTokens: response.outputTokens,
+        model: response.model,
+      });
+      continue;
+    }
+
     // Validate the output
     const result = validate(response.content);
 

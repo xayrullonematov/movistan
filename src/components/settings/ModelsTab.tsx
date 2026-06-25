@@ -96,7 +96,7 @@ function ModelsForm({ initial, update }: ModelsFormProps) {
       </Field>
 
       <fieldset className="space-y-3 rounded-lg border border-gray-800 bg-gray-950/40 p-3">
-        <legend className="px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
           Per-stage overrides
         </legend>
         {tierFields.map((tier) => (

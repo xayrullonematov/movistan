@@ -55,7 +55,7 @@ const ExportMenu = forwardRef<ExportMenuHandle, ExportMenuProps>(function Export
 
   async function fetchMarkdown(): Promise<string> {
     const res = await fetch(`/api/sessions/${sessionId}/export`);
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    if (!res.ok) throw new Error("Export failed. Please try again.");
     return res.text();
   }
 

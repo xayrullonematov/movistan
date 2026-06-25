@@ -355,18 +355,9 @@ export const roundOrchestrator: RoundOrchestrator = {
         }
       }
 
-      // Round completed: create snapshot, generate summaries
-      const allEvents = await eventStore.getSessionEvents(sessionId);
-      const state = projectSessionState(allEvents);
+      // Round completed: persist event, generate summaries, then create snapshot
 
-      // Create snapshot
-      await snapshotManager.createSnapshot(sessionId, nextRound, state);
-
-      // Generate summaries
-      await roundSummaryService.generateRoundSummary(sessionId, nextRound);
-      await workspaceSummaryService.generateSummary(sessionId);
-
-      // Persist round-completed event
+      // Persist round-completed event FIRST
       await eventStore.appendEvent({
         sessionId,
         type: "round-completed",
@@ -374,6 +365,21 @@ export const roundOrchestrator: RoundOrchestrator = {
         stage: null,
         content: { round: nextRound },
       });
+
+      // Update session stage to awaiting-intervention
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: { currentStage: "awaiting-intervention" },
+      });
+
+      // NOW create snapshot (includes round-completed event)
+      const allEvents = await eventStore.getSessionEvents(sessionId);
+      const state = projectSessionState(allEvents);
+      await snapshotManager.createSnapshot(sessionId, nextRound, state);
+
+      // Generate summaries (non-blocking for state correctness)
+      await roundSummaryService.generateRoundSummary(sessionId, nextRound);
+      await workspaceSummaryService.generateSummary(sessionId);
 
       // Auto-export session markdown
       try {
@@ -386,12 +392,6 @@ export const roundOrchestrator: RoundOrchestrator = {
       } catch {
         // Export failure must not break the round
       }
-
-      // Update session stage to awaiting-intervention
-      await prisma.session.update({
-        where: { id: sessionId },
-        data: { currentStage: "awaiting-intervention" },
-      });
     } finally {
       // Always release the lock
       await sessionLock.release(sessionId, lockId);

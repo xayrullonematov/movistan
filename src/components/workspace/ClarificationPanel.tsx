@@ -72,12 +72,12 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
       });
       if (!intRes.ok) {
         const body = (await intRes.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Server returned ${intRes.status}`);
+        throw new Error(body.error ?? "Couldn't send your reply. Please try again.");
       }
       const advRes = await fetch(`/api/sessions/${sessionId}/advance`, { method: "POST" });
       if (!advRes.ok) {
         const body = (await advRes.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Couldn't resume the round (${advRes.status})`);
+        throw new Error(body.error ?? "Couldn't resume the round. Please try again.");
       }
       setReply("");
       toast.success({ message: "Clarification sent", description: "The round will resume shortly." });
@@ -97,7 +97,7 @@ export default function ClarificationPanel({ sessionId, events, currentRound }: 
       const res = await fetch(`/api/sessions/${sessionId}/advance`, { method: "POST" });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Server returned ${res.status}`);
+        throw new Error(body.error ?? "Couldn't resume the session. Please try again.");
       }
       toast.info({ message: "Resuming without clarification" });
     } catch (err) {

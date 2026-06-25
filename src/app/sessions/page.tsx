@@ -37,7 +37,7 @@ export default function MySessionsPage() {
         </div>
         <Link
           href="/#form"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-3.5 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-colors hover:from-blue-500 hover:to-violet-500"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-2 text-sm font-medium text-gray-950 transition-colors hover:bg-emerald-400"
         >
           <Plus size={14} />
           New session

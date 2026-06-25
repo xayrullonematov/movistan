@@ -41,14 +41,14 @@ export default function MobileTabBar({
             role="tab"
             aria-selected={active}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] transition-colors ${
+            className={`relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-xs transition-colors ${
               active ? "text-white" : "text-gray-500 hover:text-gray-300"
             }`}
           >
             <Icon size={18} className={active ? "text-blue-400" : ""} />
             <span className="font-medium">{tab.label}</span>
             {tab.badge !== undefined && tab.badge > 0 && (
-              <span className="absolute right-[24%] top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500/90 px-1 text-[10px] font-medium text-white">
+              <span className="absolute right-[24%] top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500/90 px-1 text-xs font-medium text-white">
                 {tab.badge}
               </span>
             )}

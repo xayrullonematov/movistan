@@ -10,6 +10,8 @@ interface AgentArenaProps {
   currentStage: RoundStage | null;
   activeAgentId?: string;
   lastEventByAgent?: Partial<Record<AgentType, PersistedEvent>>;
+  compact?: boolean;
+  onRequestExpand?: () => void;
 }
 
 /**
@@ -34,16 +36,27 @@ export default function AgentArena({
   currentStage,
   activeAgentId,
   lastEventByAgent = {},
+  compact = false,
+  onRequestExpand,
 }: AgentArenaProps) {
   const [expandedAgent, setExpandedAgent] = useState<AgentType | null>(null);
   const isActive = currentStage !== null && currentStage !== "awaiting-intervention";
 
+  const handleAgentToggle = (agentId: AgentType) => {
+    if (compact) {
+      setExpandedAgent(agentId);
+      onRequestExpand?.();
+      return;
+    }
+    setExpandedAgent(expandedAgent === agentId ? null : agentId);
+  };
+
   return (
     <div className="flex flex-col h-full">
-      <div className="relative p-4">
+      <div className={compact ? "relative px-3 py-2" : "relative p-4"}>
         <svg
           viewBox="0 0 280 200"
-          className="w-full h-auto max-h-[200px]"
+          className={compact ? "h-auto max-h-[128px] w-full" : "h-auto max-h-[200px] w-full"}
           role="img"
           aria-label="Agent communication visualization showing four AI engineers arranged in a diamond pattern with connection lines between critique pairs"
         >
@@ -127,22 +140,24 @@ export default function AgentArena({
                   }}
                 />
 
-                <text
-                  x={pos.cx}
-                  y={pos.cy + 32}
-                  textAnchor="middle"
-                  className="fill-gray-400 text-[9px]"
-                  style={{ fontSize: "9px" }}
-                >
-                  {agent.displayName.split(" ").pop()}
-                </text>
+                {!compact && (
+                  <text
+                    x={pos.cx}
+                    y={pos.cy + 32}
+                    textAnchor="middle"
+                    className="fill-gray-400 text-[10px]"
+                    style={{ fontSize: "10px" }}
+                  >
+                    {agent.displayName.split(" ").pop()}
+                  </text>
+                )}
               </g>
             );
           })}
         </svg>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
+      <div className={compact ? "flex-1 space-y-2 overflow-y-auto px-2 pb-3" : "flex-1 space-y-2 overflow-y-auto px-3 pb-3"}>
         {agents.map((agent) => (
           <div key={agent.id} className="space-y-1">
             <AgentCard
@@ -150,12 +165,11 @@ export default function AgentArena({
               currentStage={currentStage}
               activeAgentId={activeAgentId}
               lastEvent={lastEventByAgent[agent.id]}
-              expanded={expandedAgent === agent.id}
-              onToggle={() =>
-                setExpandedAgent(expandedAgent === agent.id ? null : agent.id)
-              }
+              expanded={!compact && expandedAgent === agent.id}
+              compact={compact}
+              onToggle={() => handleAgentToggle(agent.id)}
             />
-            {isActive && expandedAgent !== agent.id && (
+            {isActive && !compact && expandedAgent !== agent.id && (
               <div className="px-1">
                 <AgentStatusStream
                   agent={agent.id}

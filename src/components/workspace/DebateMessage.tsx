@@ -57,7 +57,7 @@ function severityBadge(severity: ObjectionSeverity) {
   };
   return (
     <span
-      className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${colors[severity]}`}
+      className={`px-1.5 py-0.5 text-xs font-medium rounded border ${colors[severity]}`}
     >
       {severity}
     </span>
@@ -105,7 +105,7 @@ function ProposalContent({ data }: { data: ProposalOutput }) {
       )}
       {data.risks && data.risks.length > 0 && (
         <div className="mt-2">
-          <span className="text-[10px] uppercase font-medium text-gray-500">
+          <span className="text-xs uppercase font-medium text-gray-500">
             Risks
           </span>
           <ul className="mt-1 space-y-1">
@@ -150,7 +150,7 @@ function CritiqueContent({
       )}
       {data.acknowledgedStrengths && data.acknowledgedStrengths.length > 0 && (
         <div className="mt-2">
-          <span className="text-[10px] uppercase font-medium text-gray-500">
+          <span className="text-xs uppercase font-medium text-gray-500">
             Acknowledged Strengths
           </span>
           <ul className="mt-1 space-y-1">
@@ -176,7 +176,7 @@ function RevisionContent({ data }: { data: RevisionOutput }) {
       <p className="text-sm text-gray-300">{data.summary}</p>
       {data.concededPoints && data.concededPoints.length > 0 && (
         <div>
-          <span className="text-[10px] uppercase font-medium text-gray-500">
+          <span className="text-xs uppercase font-medium text-gray-500">
             Conceded
           </span>
           <ul className="mt-1 space-y-1">
@@ -191,7 +191,7 @@ function RevisionContent({ data }: { data: RevisionOutput }) {
       )}
       {data.maintainedPoints && data.maintainedPoints.length > 0 && (
         <div>
-          <span className="text-[10px] uppercase font-medium text-gray-500">
+          <span className="text-xs uppercase font-medium text-gray-500">
             Maintained
           </span>
           <ul className="mt-1 space-y-1">
@@ -213,7 +213,7 @@ function ConsensusContent({ data }: { data: ConsensusOutput }) {
     <div className="space-y-3">
       {data.agreements && data.agreements.length > 0 && (
         <div>
-          <span className="text-[10px] uppercase font-medium text-green-400">
+          <span className="text-xs uppercase font-medium text-green-400">
             Agreements ({data.agreements.length})
           </span>
           <ul className="mt-1 space-y-1">
@@ -228,7 +228,7 @@ function ConsensusContent({ data }: { data: ConsensusOutput }) {
       )}
       {data.disagreements && data.disagreements.length > 0 && (
         <div>
-          <span className="text-[10px] uppercase font-medium text-red-400">
+          <span className="text-xs uppercase font-medium text-red-400">
             Disagreements ({data.disagreements.length})
           </span>
           <ul className="mt-1 space-y-1">
@@ -243,7 +243,7 @@ function ConsensusContent({ data }: { data: ConsensusOutput }) {
       )}
       {data.overallConfidence !== undefined && (
         <div className="flex items-center gap-2 pt-1 border-t border-gray-700">
-          <span className="text-[10px] text-gray-500">Overall Confidence:</span>
+          <span className="text-xs text-gray-500">Overall Confidence:</span>
           <span className="text-xs font-mono text-amber-400">
             {Math.round(data.overallConfidence * 100)}%
           </span>
@@ -310,10 +310,10 @@ export default function DebateMessage({
             <span className="text-sm font-medium text-gray-200">
               {agentDisplayNames[agent]}
             </span>
-            <span className={`text-[10px] uppercase font-semibold tracking-wider ${headerTextColors[type]}`}>
+            <span className={`text-xs uppercase font-semibold tracking-wider ${headerTextColors[type]}`}>
               {headerLabel}
             </span>
-            <span className="text-[10px] text-gray-500">{formattedTime}</span>
+            <span className="text-xs text-gray-500">{formattedTime}</span>
             <svg
               className={`w-3.5 h-3.5 text-gray-500 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`}
               fill="none"

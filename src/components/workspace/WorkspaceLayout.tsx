@@ -33,7 +33,7 @@ import ExportMenu, { type ExportMenuHandle } from "./ExportMenu";
 import { useEventStream } from "@/hooks/useEventStream";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { toast } from "@/hooks/useToast";
-import { FileText, History } from "lucide-react";
+import { FileText, History, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import type { SessionConfig } from "@/types/domain";
 
@@ -114,66 +114,38 @@ function WorkspaceSummaryBar({
   const acceptedCount = session.artifacts.filter((a) => a.status === "accepted").length;
   const draftCount = session.artifacts.filter((a) => a.status === "draft").length;
   const riskCount = session.artifacts.filter((a) => a.type === "risk").length;
-  const stageLabel = session.currentStage
-    ? session.currentStage === "awaiting-intervention"
-      ? "Review needed"
-      : session.currentStage.charAt(0).toUpperCase() + session.currentStage.slice(1)
-    : session.currentRound === 0
-      ? "Ready to start"
-      : "Between rounds";
   const statusText = isActiveRound
-    ? `Round ${session.currentRound}: ${stageLabel} in progress`
+    ? "Generating recommendation..."
     : isAwaitingIntervention
-      ? `Round ${session.currentRound} complete: review outputs`
+      ? "Recommendation ready — review below"
       : session.status === "completed"
-        ? "Session completed"
+        ? "Final recommendation"
         : session.currentRound === 0
-          ? "Ready for first round"
-          : `Round ${session.currentRound} complete`;
+          ? "Ready"
+          : "Recommendation ready";
   const outputsText = topDecision
     ? topDecision.title
     : session.artifacts.length > 0
       ? `${acceptedCount} accepted, ${draftCount} draft, ${riskCount} risks`
       : "Decision report will appear after consensus";
-  const nextAction = isActiveRound
-    ? "Agents are preparing the next report update."
-    : isAwaitingIntervention
-      ? "Review artifacts, add constraints, then start the next round."
-      : session.status === "completed"
-        ? "Export the report or replay the discussion."
-        : session.currentRound === 0
-          ? "Start round one to generate the first decision report."
-          : "Start another round to refine the recommendation.";
 
   return (
-    <section className="border-b border-gray-800 bg-gray-950/70 px-4 py-3">
-      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.2fr_1fr]">
-        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Current status</p>
-          <p className="mt-1 text-sm font-medium text-gray-100">{statusText}</p>
+    <section className="border-b border-gray-800 bg-gray-950/70 px-3 py-2 sm:px-4 sm:py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-gray-100">{statusText}</p>
+          <p className="mt-0.5 truncate text-xs text-gray-400">{outputsText}</p>
         </div>
-        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Key output</p>
-          <p className="mt-1 line-clamp-2 text-sm font-medium text-gray-100">{outputsText}</p>
-        </div>
-        <div className="rounded-lg border border-gray-800 bg-gray-900/45 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Next action</p>
-              <p className="mt-1 text-sm text-gray-200">{nextAction}</p>
-            </div>
-            {!startRoundDisabled && (
-              <button
-                onClick={onStartRound}
-                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-60"
-                disabled={isStartingRound}
-              >
-                {isStartingRound ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-                Start
-              </button>
-            )}
-          </div>
-        </div>
+        {!startRoundDisabled && (
+          <button
+            onClick={onStartRound}
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md bg-emerald-500 px-4 text-sm font-semibold text-gray-950 transition-colors hover:bg-emerald-400 disabled:opacity-60"
+            disabled={isStartingRound}
+          >
+            {isStartingRound ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {isStartingRound ? "Working..." : session.currentRound > 0 ? "Refine" : "Start"}
+          </button>
+        )}
       </div>
     </section>
   );
@@ -181,13 +153,12 @@ function WorkspaceSummaryBar({
 
 export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState(() =>
-    session.consensus ? "results" : session.artifacts.length > 0 ? "artifacts" : "debate"
-  );
+  const [activeTab, setActiveTab] = useState("results");
   const [isStartingRound, setIsStartingRound] = useState(false);
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
   const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("all");
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [agentArenaExpanded, setAgentArenaExpanded] = useState(false);
   const exportMenuRef = useRef<ExportMenuHandle>(null);
   const autoStartAttemptedRef = useRef(false);
   // Fire a one-time toast if this session was crash-recovered. Use the
@@ -256,7 +227,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const tabs = useMemo(() => [
     { id: "results", label: "Report" },
     { id: "artifacts", label: "Artifacts", badge: session.artifacts.length || undefined },
-    { id: "debate", label: "Debate" },
+    { id: "debate", label: "Reasoning" },
   ], [session.artifacts.length]);
 
   const handleStartRound = useCallback(async () => {
@@ -265,14 +236,16 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       const res = await fetch(`/api/sessions/${session.id}/rounds`, { method: "POST" });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error({ message: "Couldn't start round", description: body.error ?? `Server returned ${res.status}` });
+        toast.error({ message: "Couldn't start round", description: body.error ?? "Something went wrong. Please try again." });
         return;
       }
       mutate?.();
     } catch (err) {
       toast.error({
         message: "Couldn't start round",
-        description: err instanceof Error ? err.message : "Network error",
+        description: err instanceof Error && err.message.includes("fetch")
+          ? "Couldn't reach the server. Check your connection."
+          : "A network error occurred. Please try again.",
       });
     } finally {
       setIsStartingRound(false);
@@ -291,7 +264,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const handleExportFromResults = async () => {
     const res = await fetch(`/api/sessions/${session.id}/export`);
     if (!res.ok) {
-      toast.error({ message: "Export failed", description: `Server returned ${res.status}` });
+      toast.error({ message: "Export failed", description: "Couldn't generate the export. Please try again." });
       return;
     }
     const blob = await res.blob();
@@ -327,80 +300,60 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   });
 
   return (
-    <div className="min-h-screen h-screen flex flex-col bg-gray-950">
+    <div className="min-h-screen h-screen flex flex-col bg-[#0b0d0c]">
       {/* Header */}
       <header
         className={`
-          relative border-b border-gray-800 px-4 py-3 shrink-0
+          relative border-b border-gray-800 px-3 py-2 shrink-0 sm:px-4 sm:py-3
           ${isActiveRound ? "border-b-transparent" : ""}
         `}
       >
         {/* Active round animated gradient border */}
         {isActiveRound && (
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 bg-[length:200%_100%] animate-[gradient-shift_3s_ease_infinite]" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-emerald-500/70" />
         )}
 
         <div className="flex items-center justify-between">
           {/* Left: Breadcrumb + Title */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => router.push("/sessions")}
-              className="flex min-h-10 items-center gap-1 text-gray-300 hover:text-gray-100 text-sm shrink-0 transition-colors"
+              className="flex min-h-10 items-center gap-1 text-gray-400 hover:text-gray-100 text-sm shrink-0 transition-colors"
             >
               <ArrowLeft size={14} />
-              <span className="hidden sm:inline">All Sessions</span>
             </button>
-            <div className="w-px h-5 bg-gray-700" />
-            <h1 className="text-sm font-medium text-gray-200 truncate max-w-[140px] sm:max-w-xs lg:max-w-md">
-              {session.problemDescription.slice(0, 80)}
-              {session.problemDescription.length > 80 ? "..." : ""}
+            <h1 className="max-w-[180px] truncate text-sm font-medium text-gray-200 sm:max-w-sm lg:max-w-lg">
+              {session.problemDescription.slice(0, 60)}
             </h1>
-          </div>
-
-          {/* Center: Status Badge */}
-          <div className="hidden md:flex items-center gap-3">
-            <SessionStatusBadge status={session.status} />
-            {session.currentRound > 0 && (
-              <span className="text-xs text-gray-500 font-mono">
-                Round {session.currentRound}
+            {isActiveRound && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Analyzing
               </span>
             )}
           </div>
 
-          {/* Right: Token mini bar + actions */}
-          <div className="flex items-center gap-3">
-            {githubRepo && (
-              <div className="hidden md:block">
-                <GitHubGroundingIndicator repo={githubRepo} events={events} />
-              </div>
-            )}
-            <div className="hidden lg:block w-36">
-              <TokenBudgetBar
-                used={totalTokens}
-                total={budgetCeiling}
-                estimatedCost={session.tokenUsage.estimatedCostUsd}
-                onEditBudget={() => setShowBudgetDialog(true)}
-              />
-            </div>
+          {/* Right: actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {session.status === "completed" && (
               <Link
                 href={`/sessions/${session.id}/replay`}
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                title="Replay this session"
+                title="View history"
               >
                 <History size={12} />
-                <span>Replay</span>
+                <span>History</span>
               </Link>
             )}
-            <ExportMenu ref={exportMenuRef} sessionId={session.id} session={session} />
-            <button
-              onClick={handleEndSession}
-              disabled={session.status === "completed"}
-              className="min-h-10 px-3 py-1.5 text-sm bg-red-950/50 border border-red-800/50 rounded-lg text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors disabled:opacity-50"
-            >
-              <span className="sm:hidden">End</span>
-              <span className="hidden sm:inline">End Session</span>
-            </button>
+            {!isEmptyState && <ExportMenu ref={exportMenuRef} sessionId={session.id} session={session} />}
+            {!isEmptyState && session.status !== "completed" && (
+              <button
+                onClick={handleEndSession}
+                className="min-h-10 px-3 py-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+              >
+                End
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -408,39 +361,26 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
       {/* Live event subscriptions — toasts fire on each stage transition. */}
       <StageTransitionToast transitions={stageTransitions} />
 
-      {/* Stage Progress Bar with optional ETA chip */}
-      <div className="relative">
-        <StageProgressBar
-          currentStage={session.currentStage}
-          completedStages={completedStages}
-          currentRound={session.currentRound}
-        />
-        {isActiveRound && (
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-            <RoundEtaIndicator
-              events={events}
-              currentRound={session.currentRound}
-              currentStage={session.currentStage}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Mobile: GitHub grounding chip + replay link beneath the stage bar */}
-      {(githubRepo || session.status === "completed") && (
-        <div className="md:hidden border-b border-gray-800 bg-gray-950/40 px-3 py-2 flex items-center gap-2 overflow-x-auto">
-          {githubRepo && <GitHubGroundingIndicator repo={githubRepo} events={events} />}
-          {session.status === "completed" && (
-            <Link
-              href={`/sessions/${session.id}/replay`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-800 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-            >
-              <History size={12} />
-              Replay
-            </Link>
+      {/* Stage Progress Bar — only visible during active round execution */}
+      {isActiveRound && (
+        <div className="relative">
+          <StageProgressBar
+            currentStage={session.currentStage}
+            completedStages={completedStages}
+            currentRound={session.currentRound}
+          />
+          {isActiveRound && (
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+              <RoundEtaIndicator
+                events={events}
+                currentRound={session.currentRound}
+                currentStage={session.currentStage}
+              />
+            </div>
           )}
         </div>
       )}
+
 
       {/* Notification Banner for Awaiting Intervention */}
       <AnimatePresence>
@@ -448,8 +388,8 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
           <div className="px-4 pt-3 shrink-0">
             <NotificationBanner
               type="warning"
-              message="Round complete! Review the artifacts and start the next round, or add constraints."
-              action={{ label: "Start Next Round", onClick: handleStartRound }}
+              message="Analysis complete. You can refine the recommendation by adding constraints, or run another pass."
+              action={{ label: "Run Another Pass", onClick: handleStartRound }}
               dismissible
             />
           </div>
@@ -468,20 +408,40 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
 
       {/* Main Body: responsive — desktop 2-col, mobile single column */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left Column: Agent Arena — desktop only */}
-        <aside className="hidden md:flex md:w-72 lg:w-80 xl:w-[22rem] border-r border-gray-800 overflow-hidden flex-col shrink-0">
-          <AgentArena
-            agents={session.agents}
-            currentStage={session.currentStage}
-            activeAgentId={undefined}
-            lastEventByAgent={lastEventByAgent}
-          />
-        </aside>
+        {/* Left Column: Agent Arena — only visible in Reasoning tab */}
+        {!isEmptyState && activeTab === "debate" && (
+          <aside
+            className={`hidden shrink-0 flex-col overflow-hidden border-r border-gray-800 transition-all duration-200 md:flex ${
+              agentArenaExpanded ? "md:w-72 lg:w-80 xl:w-[22rem]" : "md:w-56 lg:w-56 xl:w-56"
+            }`}
+          >
+            <div className="flex min-h-12 items-center justify-between border-b border-gray-800 px-3">
+              <p className="truncate text-sm font-semibold text-gray-200">Agents</p>
+              <button
+                type="button"
+                onClick={() => setAgentArenaExpanded((expanded) => !expanded)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-800 bg-gray-900 text-gray-400 transition-colors hover:border-gray-700 hover:bg-gray-800 hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                aria-label={agentArenaExpanded ? "Collapse agent arena" : "Expand agent arena"}
+                title={agentArenaExpanded ? "Collapse agent arena" : "Expand agent arena"}
+              >
+                {agentArenaExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+              </button>
+            </div>
+            <AgentArena
+              agents={session.agents}
+              currentStage={session.currentStage}
+              activeAgentId={undefined}
+              lastEventByAgent={lastEventByAgent}
+              compact={!agentArenaExpanded}
+              onRequestExpand={() => setAgentArenaExpanded(true)}
+            />
+          </aside>
+        )}
 
         {/* Right Column: Main Content */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Mobile-only horizontal agent strip */}
-          {!isEmptyState && (
+          {!isEmptyState && activeTab === "debate" && (
             <div className="md:hidden">
               <AgentStrip
                 agents={session.agents}
@@ -501,24 +461,24 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 transition={{ duration: 0.4 }}
                 className="text-center max-w-md"
               >
-                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mx-auto mb-6">
-                  <Play size={28} className="text-blue-400 ml-1" />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-100 mb-2">
-                  Your AI engineering team is ready
+                <h2 className="text-lg font-semibold text-gray-100 mb-2">
+                  Ready to analyze
                 </h2>
-                <p className="text-sm text-gray-400 mb-2 leading-relaxed">
+                <p className="text-sm text-gray-400 mb-1 leading-relaxed">
                   {session.problemDescription}
                 </p>
-                <p className="text-sm text-gray-400 mb-6">
-                  Round one starts the first decision report. Agents move through proposal, critique, revision, and consensus.
-                </p>
+                {session.constraints.length > 0 && (
+                  <p className="text-xs text-gray-500 mb-6">
+                    {session.constraints.length} constraint{session.constraints.length > 1 ? "s" : ""} set
+                  </p>
+                )}
+                {!session.constraints.length && <div className="mb-6" />}
                 <button
                   onClick={handleStartRound}
                   disabled={startRoundDisabled}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-medium rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-gray-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
                 >
-                  Start First Round
+                  Generate recommendation
                   <ArrowRight size={16} />
                 </button>
               </motion.div>
@@ -534,14 +494,16 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 onStartRound={handleStartRound}
               />
 
-              {/* Tabs — desktop top tabs only */}
-              <div className="hidden md:block">
-                <WorkspaceTabs
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  tabs={tabs}
-                />
-              </div>
+              {/* Tabs — only after there's content to navigate between */}
+              {session.currentRound > 0 && (
+                <div className="hidden md:block">
+                  <WorkspaceTabs
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    tabs={tabs}
+                  />
+                </div>
+              )}
 
               {/* Tab Content */}
               <div className="flex-1 min-h-0 overflow-hidden">
@@ -554,7 +516,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 )}
 
                 {activeTab === "artifacts" && (
-                  <div className="h-full overflow-y-auto px-4 py-4">
+                  <div className="h-full overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
                     {/* Clarification panel takes priority when an agent is blocked on a question. */}
                     {hasPendingClarification && (
                       <div className="mb-4">
@@ -573,11 +535,11 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                     )}
 
                     {/* Filter Bar */}
-                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:flex sm:flex-wrap sm:items-center">
                       <select
                         value={artifactTypeFilter}
                         onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
-                        className="min-h-10 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                       >
                         <option value="all">All Types</option>
                         <option value="decision">Decision</option>
@@ -590,7 +552,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                       <select
                         value={artifactStatusFilter}
                         onChange={(e) => setArtifactStatusFilter(e.target.value as ArtifactStatus | "all")}
-                        className="min-h-10 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        className="min-h-10 min-w-0 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                       >
                         <option value="all">All Status ({artifactStatusCounts.all})</option>
                         <option value="accepted">Accepted ({artifactStatusCounts.accepted})</option>
@@ -603,19 +565,19 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                             setArtifactTypeFilter("all");
                             setArtifactStatusFilter("all");
                           }}
-                          className="min-h-10 px-3 py-2 text-sm bg-blue-900/40 border border-blue-700/50 rounded-lg text-blue-200 hover:bg-blue-900/60 hover:text-blue-100 transition-colors"
+                          className="min-h-10 px-3 py-2 text-sm bg-emerald-500/10 border border-emerald-500/40 rounded-lg text-emerald-200 hover:bg-emerald-500/15 hover:text-emerald-100 transition-colors"
                         >
                           Show All
                         </button>
                       )}
-                      <span className="ml-auto text-sm text-gray-400">
+                      <span className="self-center text-right text-sm text-gray-400 sm:ml-auto">
                         {filteredArtifacts.length} artifact{filteredArtifacts.length !== 1 ? "s" : ""}
                       </span>
                     </div>
 
                     {/* Artifact Grid */}
                     {filteredArtifacts.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:grid-cols-2">
                         {filteredArtifacts.map((artifact) => (
                           <ArtifactCard
                             key={artifact.id}
@@ -658,86 +620,21 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
         </div>
       )}
 
-      {/* Mobile FAB for Start Next Round (above the tab bar) */}
-      {!isEmptyState && !startRoundDisabled && (
-        <button
-          onClick={handleStartRound}
-          aria-label={isStartingRound ? "Starting round" : "Start next round"}
-          className={`md:hidden fixed right-4 bottom-[68px] z-30 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-500 hover:to-violet-500 ${
-            isAwaitingIntervention ? "animate-pulse" : ""
-          }`}
-        >
-          {isStartingRound ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Play size={16} />
-          )}
-          {isStartingRound ? "Starting" : "Start Round"}
-        </button>
-      )}
-
-      {/* Footer — desktop only */}
-      <footer className="hidden md:block border-t border-gray-800 px-4 py-3 shrink-0">
-        <div className="flex items-center justify-between">
-          {/* Left: Action buttons */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleStartRound}
-              disabled={startRoundDisabled}
-              className={`
-                inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all
-                ${isActiveRound
-                  ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                  : isAwaitingIntervention && !startRoundDisabled
-                    ? "bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-500/20 animate-pulse"
-                    : "bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white shadow-lg shadow-blue-500/20"
-                }
-                disabled:opacity-50 disabled:shadow-none
-              `}
-            >
-              {isStartingRound ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Starting...
-                </>
-              ) : isActiveRound ? (
-                "Round in progress..."
-              ) : (
-                <>
-                  <Play size={14} />
-                  Start Next Round
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Center: Round counter mini circles */}
-          {session.currentRound > 0 && (
-            <div className="hidden md:flex items-center gap-1.5">
-              {Array.from({ length: session.currentRound }, (_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-blue-500"
-                  title={`Round ${i + 1}`}
-                />
-              ))}
-              {session.status === "active" && (
-                <div className="w-2 h-2 rounded-full border border-gray-600" title="Next round" />
-              )}
-            </div>
-          )}
-
-          {/* Right: Token Budget */}
-          <div className="w-44 hidden md:block">
-            <TokenBudgetBar
-              used={totalTokens}
-              total={budgetCeiling}
-              estimatedCost={session.tokenUsage.estimatedCostUsd}
-              onEditBudget={() => setShowBudgetDialog(true)}
+      {/* Footer — desktop only: round indicators */}
+      {!isEmptyState && session.currentRound > 0 && (
+        <footer className="hidden md:flex items-center justify-center gap-1.5 border-t border-gray-800 px-4 py-2 shrink-0">
+          {Array.from({ length: session.currentRound }, (_, i) => (
+            <div
+              key={i}
+              className="w-2 h-2 rounded-full bg-emerald-500"
+              title={`Round ${i + 1}`}
             />
-          </div>
-        </div>
-      </footer>
+          ))}
+          {session.status === "active" && (
+            <div className="w-2 h-2 rounded-full border border-gray-600" title="Next round" />
+          )}
+        </footer>
+      )}
     </div>
   );
 }

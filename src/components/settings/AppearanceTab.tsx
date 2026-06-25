@@ -88,7 +88,7 @@ export default function AppearanceTab() {
                 <Icon size={14} className={selected ? "text-blue-300" : "text-gray-400"} />
                 <span className="font-medium">{opt.label}</span>
               </div>
-              <p className="mt-1.5 text-[11px] leading-snug text-gray-400">{opt.description}</p>
+              <p className="mt-1.5 text-xs leading-snug text-gray-400">{opt.description}</p>
             </label>
           );
         })}

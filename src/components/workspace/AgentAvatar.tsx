@@ -16,9 +16,9 @@ const agentConfig: Record<
 > = {
   "senior-engineer": {
     icon: Code2,
-    color: "#3b82f6",
-    bgColor: "bg-blue-500/20",
-    glowColor: "shadow-blue-500/50",
+    color: "#14b8a6",
+    bgColor: "bg-emerald-500/15",
+    glowColor: "shadow-emerald-500/40",
   },
   "security-engineer": {
     icon: Shield,
@@ -34,9 +34,9 @@ const agentConfig: Record<
   },
   "product-engineer": {
     icon: Users,
-    color: "#8b5cf6",
-    bgColor: "bg-violet-500/20",
-    glowColor: "shadow-violet-500/50",
+    color: "#38bdf8",
+    bgColor: "bg-cyan-500/15",
+    glowColor: "shadow-cyan-500/40",
   },
 };
 

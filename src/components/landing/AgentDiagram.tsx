@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * AgentDiagram - SVG component showing 4 agent nodes arranged in a diamond pattern
- * with animated dashed lines between critique pairs.
+ * AgentDiagram - SVG component showing 4 review roles arranged in a diamond pattern
+ * with muted connection lines between critique pairs.
  *
- * Layout: top=senior(blue), right=security(red), bottom=performance(amber), left=product(violet)
+ * Layout: top=architect(teal), right=security(red), bottom=performance(amber), left=product(cyan)
  * Critique pairs: senior<->performance, security<->product
  */
 
@@ -19,10 +19,10 @@ interface AgentNode {
 }
 
 const agents: AgentNode[] = [
-  { id: "senior", label: "Architect", color: "#3b82f6", cx: 200, cy: 60 },
+  { id: "senior", label: "Architect", color: "#14b8a6", cx: 200, cy: 60 },
   { id: "security", label: "Guardian", color: "#ef4444", cx: 340, cy: 200 },
   { id: "performance", label: "Optimizer", color: "#f59e0b", cx: 200, cy: 340 },
-  { id: "product", label: "Advocate", color: "#8b5cf6", cx: 60, cy: 200 },
+  { id: "product", label: "Advocate", color: "#38bdf8", cx: 60, cy: 200 },
 ];
 
 const critiquePairs: [number, number][] = [
@@ -34,23 +34,10 @@ export default function AgentDiagram() {
   const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
 
   return (
-    <div className="w-full max-w-sm mx-auto" aria-label="Agent communication diagram">
+    <div className="mx-auto w-full max-w-[15rem] sm:max-w-sm" aria-label="Agent communication diagram">
       <svg viewBox="0 0 400 400" className="w-full h-auto">
-        <defs>
-          {agents.map((agent) => (
-            <filter key={`glow-${agent.id}`} id={`glow-${agent.id}`}>
-              <feGaussianBlur stdDeviation="6" result="blur" />
-              <feFlood floodColor={agent.color} floodOpacity="0.6" result="color" />
-              <feComposite in="color" in2="blur" operator="in" result="glow" />
-              <feMerge>
-                <feMergeNode in="glow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          ))}
-        </defs>
 
-        {/* Animated dashed lines between critique pairs */}
+        {/* Critique lines between review pairs */}
         {critiquePairs.map(([a, b], i) => (
           <line
             key={`line-${i}`}
@@ -58,11 +45,10 @@ export default function AgentDiagram() {
             y1={agents[a].cy}
             x2={agents[b].cx}
             y2={agents[b].cy}
-            stroke={i === 0 ? "#3b82f6" : "#8b5cf6"}
+            stroke={i === 0 ? "#14b8a6" : "#f59e0b"}
             strokeWidth="2"
             strokeDasharray="8 6"
-            strokeOpacity="0.5"
-            className="animate-[flow-dash_2s_linear_infinite]"
+            strokeOpacity="0.45"
           />
         ))}
 
@@ -81,7 +67,7 @@ export default function AgentDiagram() {
                 y1={agent.cy}
                 x2={other.cx}
                 y2={other.cy}
-                stroke="#374151"
+                stroke="#4a4a42"
                 strokeWidth="1"
                 strokeDasharray="4 4"
                 strokeOpacity="0.3"
@@ -99,11 +85,8 @@ export default function AgentDiagram() {
               onMouseEnter={() => setHoveredAgent(agent.id)}
               onMouseLeave={() => setHoveredAgent(null)}
               className="cursor-pointer transition-transform duration-300"
-              style={{
-                filter: isHovered ? `url(#glow-${agent.id})` : undefined,
-              }}
             >
-              {/* Outer ring animation */}
+              {/* Outer ring */}
               <circle
                 cx={agent.cx}
                 cy={agent.cy}
@@ -111,7 +94,7 @@ export default function AgentDiagram() {
                 fill="none"
                 stroke={agent.color}
                 strokeWidth="2"
-                strokeOpacity={isHovered ? 0.8 : 0.3}
+                strokeOpacity={isHovered ? 0.75 : 0.35}
                 className="transition-all duration-300"
               />
               {/* Main circle */}
@@ -119,7 +102,7 @@ export default function AgentDiagram() {
                 cx={agent.cx}
                 cy={agent.cy}
                 r={26}
-                fill={`${agent.color}20`}
+                fill={`${agent.color}18`}
                 stroke={agent.color}
                 strokeWidth="2.5"
                 className="transition-all duration-300"
@@ -162,7 +145,7 @@ export default function AgentDiagram() {
                 x={agent.cx}
                 y={agent.cy + 50}
                 textAnchor="middle"
-                fill="#9ca3af"
+                fill="#b8b0a2"
                 fontSize="13"
                 fontWeight="500"
               >

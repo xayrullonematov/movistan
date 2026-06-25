@@ -56,7 +56,7 @@ export default function BudgetEditDialog({
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Server returned ${res.status}`);
+        throw new Error(body.error ?? "Couldn't update budget. Please try again.");
       }
       onSaved?.(nextBudget);
       toast.success({
@@ -132,7 +132,7 @@ export default function BudgetEditDialog({
               disabled={unlimited}
               className="mt-1 w-full rounded-md border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             />
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-xs text-gray-500">
               Raising mid-round is safe; lowering below current usage is rejected.
             </p>
           </div>

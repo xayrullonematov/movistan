@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { deriveSummary } from "../DebateMessage";
 import { formatConfidence } from "../ResultsDashboard";
+import { buildReplayMilestones } from "../ReplayScrubber";
 import { parseStageProgress } from "../ToolCallTrace";
 import type { PersistedEvent } from "@/types/domain";
 
@@ -209,5 +210,83 @@ describe("parseStageProgress", () => {
     const result = parseStageProgress(makeEvent(content));
     expect(result).not.toBeNull();
     expect(result!.capHit).toBe(false);
+  });
+});
+
+
+// ---------- buildReplayMilestones ----------
+
+describe("buildReplayMilestones", () => {
+  function makeReplayEvent(overrides: Partial<PersistedEvent>): PersistedEvent {
+    return {
+      id: overrides.id ?? `evt-${Math.random().toString(36).slice(2, 8)}`,
+      sessionId: "sess-1",
+      type: "session-created",
+      round: 0,
+      stage: null,
+      agentId: null,
+      content: "{}",
+      timestamp: new Date().toISOString(),
+      ...overrides,
+    } as PersistedEvent;
+  }
+
+  it("turns replay events into customer-facing milestones", () => {
+    const events: PersistedEvent[] = [
+      makeReplayEvent({
+        id: "created",
+        type: "session-created",
+        content: JSON.stringify({ problemDescription: "Choose the safest rollout strategy." }),
+      }),
+      makeReplayEvent({ id: "round-started", type: "round-started", round: 1, stage: "proposal", content: JSON.stringify({ round: 1 }) }),
+      makeReplayEvent({ id: "progress", type: "stage-progress", round: 1, stage: "proposal", content: JSON.stringify({ status: "completed" }) }),
+      makeReplayEvent({ id: "proposal", type: "proposal", round: 1, stage: "proposal", agentId: "senior-engineer", content: JSON.stringify({ summary: "Use a phased rollout." }) }),
+      makeReplayEvent({ id: "critique", type: "critique", round: 1, stage: "critique", agentId: "security-engineer", content: JSON.stringify({ summary: "Audit the auth path." }) }),
+      makeReplayEvent({
+        id: "consensus",
+        type: "consensus-update",
+        round: 1,
+        stage: "consensus",
+        content: JSON.stringify({
+          recommendedDecisions: [{ title: "Ship behind a feature flag", confidence: 0.86 }],
+          overallConfidence: 0.8,
+        }),
+      }),
+      makeReplayEvent({
+        id: "risk",
+        type: "artifact-created",
+        agentId: "security-engineer",
+        content: JSON.stringify({ artifactId: "risk-1", type: "risk", title: "Privileged users bypass beta gate" }),
+      }),
+      makeReplayEvent({ id: "complete", type: "round-completed", round: 1, content: JSON.stringify({ round: 1 }) }),
+    ];
+
+    const milestones = buildReplayMilestones(events);
+
+    expect(milestones.map((milestone) => milestone.title)).toEqual([
+      "Decision review created",
+      "Round 1 started",
+      "Proposal stage completed",
+      "Critique stage completed",
+      "Consensus: Ship behind a feature flag",
+      "Risk added",
+      "Round 1 completed",
+    ]);
+    expect(milestones.some((milestone) => milestone.title === "Stage progress")).toBe(false);
+    expect(milestones.find((milestone) => milestone.title === "Risk added")?.tone).toBe("risk");
+  });
+
+  it("uses one milestone per round stage even when multiple agents contribute", () => {
+    const events: PersistedEvent[] = [
+      makeReplayEvent({ id: "round-started", type: "round-started", round: 1, stage: "proposal", content: JSON.stringify({ round: 1 }) }),
+      makeReplayEvent({ id: "proposal-1", type: "proposal", round: 1, stage: "proposal", agentId: "senior-engineer", content: JSON.stringify({ summary: "A" }) }),
+      makeReplayEvent({ id: "proposal-2", type: "proposal", round: 1, stage: "proposal", agentId: "security-engineer", content: JSON.stringify({ summary: "B" }) }),
+      makeReplayEvent({ id: "revision", type: "revision", round: 1, stage: "revision", agentId: "product-engineer", content: JSON.stringify({ summary: "C" }) }),
+    ];
+
+    const milestones = buildReplayMilestones(events);
+
+    expect(milestones.filter((milestone) => milestone.title === "Proposal stage completed")).toHaveLength(1);
+    expect(milestones.filter((milestone) => milestone.title === "Revision stage completed")).toHaveLength(1);
   });
 });

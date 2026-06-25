@@ -46,16 +46,16 @@ export default function Home() {
 
       {/* Start Session Form */}
       <motion.div {...fadeInUp}>
-        <section id="form" className="py-24 px-6">
+        <section id="form" className="px-4 py-14 sm:px-6 sm:py-24">
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-50 text-center mb-4">
-              Start a Decision Debate
+            <h2 className="mb-3 text-center text-2xl font-bold text-gray-50 sm:mb-4 sm:text-3xl">
+              Start a Decision Review
             </h2>
-            <p className="text-gray-300 text-center mb-10">
+            <p className="mb-6 text-center text-sm text-gray-300 sm:mb-10 sm:text-base">
               Describe the decision, tradeoff, or risk review you need. The first
               round starts as soon as the workspace opens.
             </p>
-            <div className="p-6 md:p-8 rounded-xl bg-gray-900 border border-gray-700">
+            <div className="rounded-lg border border-[#34362f] bg-[#151712] p-4 sm:p-6 md:p-8">
               <NewSessionForm />
             </div>
           </div>
@@ -65,13 +65,38 @@ export default function Home() {
       {/* Recent Sessions */}
       {!isLoading && sessions.length > 0 && (
         <motion.div {...fadeInUp}>
-          <section className="pb-24 px-6">
+          <section className="px-4 pb-14 sm:px-6 sm:pb-24">
             <div className="max-w-2xl mx-auto">
               <SessionList sessions={sessions} />
             </div>
           </section>
         </motion.div>
       )}
+
+      {/* Footer */}
+      <footer className="border-t border-[#2f312b] px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-300">AI Engineering Room</span>
+              <span className="text-gray-600">·</span>
+              <span className="text-xs text-gray-500">Multi-Agent Decision Intelligence</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-500">
+              <span>4 LLM Agents</span>
+              <span className="text-gray-700">•</span>
+              <span>Structured Debate Rounds</span>
+              <span className="text-gray-700">•</span>
+              <span>Event-Sourced Architecture</span>
+              <span className="text-gray-700">•</span>
+              <span>Powered by Qwen</span>
+            </div>
+            <p className="text-xs text-gray-600">
+              Built with Next.js 16, Prisma, Zod, and the DashScope OpenAI-compatible API.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

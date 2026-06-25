@@ -127,7 +127,7 @@ function ProvidersForm({ initial, update }: ProvidersFormProps) {
                   className="sr-only"
                 />
                 <div className="font-medium text-gray-100">{preset.label}</div>
-                <div className="mt-1 text-[11px] leading-snug text-gray-400">{preset.description}</div>
+                <div className="mt-1 text-xs leading-snug text-gray-400">{preset.description}</div>
               </label>
             );
           })}

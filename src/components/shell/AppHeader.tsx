@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
 import KeyboardShortcutsHelpButton from "./KeyboardShortcutsHelp";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -30,7 +30,7 @@ export default function AppHeader() {
       <Link
         href={href}
         className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-          active ? "text-white bg-white/5" : "text-gray-400 hover:text-gray-100"
+          active ? "bg-emerald-500/10 text-emerald-100" : "text-gray-400 hover:text-gray-100"
         }`}
       >
         {label}
@@ -39,11 +39,11 @@ export default function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-gray-800/80 bg-gray-950/80 backdrop-blur">
+    <header className="sticky top-0 z-40 h-16 border-b border-[#2f312b] bg-[#0b0d0c]/85 backdrop-blur">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-gray-50 transition-opacity hover:opacity-80">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 text-white">
-            <Brain size={18} />
+        <Link href="/" className="flex items-center gap-2.5 text-gray-50 transition-opacity hover:opacity-80">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm shadow-emerald-500/20">
+            <ClipboardCheck size={16} className="text-white" />
           </span>
           <span className="text-base font-semibold tracking-tight hidden sm:inline">
             AI Engineering Room

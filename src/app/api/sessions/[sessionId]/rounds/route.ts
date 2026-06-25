@@ -72,9 +72,32 @@ export async function POST(
     }
 
     console.error("POST /api/sessions/[sessionId]/rounds error:", error);
+
+    // Surface specific LLM/orchestrator errors for the frontend error mapper
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    let status = 500;
+    let friendlyError = "Failed to start round";
+
+    if (msg.includes("timed out") || msg.includes("timeout")) {
+      friendlyError = "The AI model took too long to respond. Please try again.";
+      status = 504;
+    } else if (msg.includes("429") || msg.includes("rate limit") || msg.includes("throttl")) {
+      friendlyError = "The AI service is rate-limited. Please wait a moment and try again.";
+      status = 429;
+    } else if (msg.includes("quota") || msg.includes("insufficient")) {
+      friendlyError = "The AI model's usage quota has been exhausted.";
+      status = 429;
+    } else if (msg.includes("401") || msg.includes("API-key") || msg.includes("api_key")) {
+      friendlyError = "The API key is invalid or expired. Check your settings.";
+      status = 401;
+    } else if (msg.includes("budget")) {
+      friendlyError = "Token budget exceeded for this session.";
+      status = 402;
+    }
+
     return NextResponse.json(
-      { error: "Failed to start round" },
-      { status: 500 }
+      { error: friendlyError },
+      { status }
     );
   }
 }

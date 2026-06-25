@@ -1,39 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
-  --foreground: #f3f4f6;
-  --card: #111827;
-  --card-foreground: #f3f4f6;
-  --border: #374151;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  --accent: #3b82f6;
+  --background: #0b0d0c;
+  --foreground: #f4f2ed;
+  --background-end: #10120f;
+  --card: #151712;
+  --card-foreground: #f4f2ed;
+  --border: #3a3a32;
+  --muted: #20221d;
+  --muted-foreground: #b6b0a3;
+  --accent: #14b8a6;
   --accent-foreground: #ffffff;
   --success: #22c55e;
   --warning: #eab308;
   --danger: #ef4444;
 
   /* Design system color palette */
-  --surface: #111827;
-  --surface-elevated: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --surface: #151712;
+  --surface-elevated: #1f211b;
+  --text-primary: #f4f2ed;
+  --text-secondary: #b6b0a3;
+  --text-muted: #827c70;
 
   /* Agent colors */
-  --agent-senior: #3b82f6;
+  --agent-senior: #14b8a6;
   --agent-security: #ef4444;
   --agent-performance: #f59e0b;
-  --agent-product: #8b5cf6;
+  --agent-product: #38bdf8;
 
   /* Artifact type colors */
   --artifact-decision: #22c55e;
   --artifact-risk: #ef4444;
   --artifact-assumption: #f59e0b;
-  --artifact-tradeoff: #8b5cf6;
+  --artifact-tradeoff: #a78bfa;
   --artifact-open-question: #06b6d4;
-  --artifact-recommendation: #3b82f6;
+  --artifact-recommendation: #14b8a6;
 }
 
 @theme inline {
@@ -74,7 +75,7 @@
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(180deg, var(--background) 0%, var(--background-end) 100%);
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
 }
@@ -87,12 +88,13 @@ body {
 html[data-theme="light"] {
   --background: #f9fafb;
   --foreground: #111827;
+  --background-end: #eef2f0;
   --card: #ffffff;
   --card-foreground: #111827;
   --border: #e5e7eb;
   --muted: #f3f4f6;
   --muted-foreground: #4b5563;
-  --accent: #2563eb;
+  --accent: #0f766e;
   --accent-foreground: #ffffff;
   --surface: #ffffff;
   --surface-elevated: #f3f4f6;

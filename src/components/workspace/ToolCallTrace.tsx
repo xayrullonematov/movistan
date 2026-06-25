@@ -105,11 +105,11 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
       >
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-gray-300">Tool Call Trace</span>
-          <span className="text-[10px] text-gray-500 font-mono">
+          <span className="text-xs text-gray-500 font-mono">
             {traceData.length} event{traceData.length !== 1 ? "s" : ""}
           </span>
           {filteredCount > 0 && (
-            <span className="text-[10px] text-gray-500 italic">
+            <span className="text-xs text-gray-500 italic">
               ({filteredCount} hidden)
             </span>
           )}
@@ -140,7 +140,7 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
                       : "files"}
                     ...
                   </span>
-                  <span className="text-[10px] text-gray-500 font-mono ml-auto">
+                  <span className="text-xs text-gray-500 font-mono ml-auto">
                     {trace.toolCallCount} calls
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export default function ToolCallTrace({ events, currentStage }: ToolCallTracePro
 
           {/* Filtered events indicator */}
           {filteredCount > 0 && (
-            <p className="text-[10px] text-gray-500 italic pt-1">
+            <p className="text-xs text-gray-500 italic pt-1">
               {filteredCount} event{filteredCount !== 1 ? "s" : ""} hidden (not repo-grounded)
             </p>
           )}

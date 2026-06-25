@@ -98,7 +98,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -112,7 +112,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="min-h-11 rounded-md border border-gray-700 bg-gray-950/70 px-3 py-2 text-sm text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="min-h-11 w-32 shrink-0 rounded-md border border-gray-700 bg-gray-950/70 px-2 py-2 text-sm text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-auto sm:px-3"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>
@@ -133,7 +133,7 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
         />
       ) : (
         <>
-        <div className="space-y-3 sm:hidden">
+        <div className="space-y-2 sm:hidden">
           {filtered.map((session) => (
             <SessionCard key={session.id} session={session} />
           ))}
@@ -218,21 +218,16 @@ function SessionCard({ session }: { session: SessionSummary }) {
   return (
     <Link
       href={`/sessions/${session.id}`}
-      className="block rounded-xl border border-gray-800 bg-gray-900/50 p-4 transition-colors hover:border-gray-700 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+      className="block rounded-lg border border-gray-800 bg-gray-900/50 p-3 transition-colors hover:border-gray-700 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-sm font-medium leading-snug text-gray-100">{title}</h2>
+        <h2 className="line-clamp-2 text-sm font-medium leading-snug text-gray-100">{title}</h2>
         <StatusPill status={session.status} />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Round</p>
-          <p className="mt-1 text-gray-100">{session.currentRound}</p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Created</p>
-          <p className="mt-1 text-gray-100">{timeAgo(session.createdAt)}</p>
-        </div>
+      <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+        <span>Round {session.currentRound}</span>
+        <span className="h-1 w-1 rounded-full bg-gray-600" />
+        <span>{timeAgo(session.createdAt)}</span>
       </div>
     </Link>
   );

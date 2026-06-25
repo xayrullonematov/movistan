@@ -123,7 +123,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
                       <p className="truncate text-sm text-gray-100">
                         {session.title || "Untitled session"}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-gray-500">
+                      <p className="mt-0.5 text-xs text-gray-500">
                         Round {session.currentRound} · {session.status} · {timeAgo(session.createdAt)}
                       </p>
                     </div>

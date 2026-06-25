@@ -50,7 +50,7 @@ export default function GitHubGroundingIndicator({ repo, events }: GitHubGroundi
       >
         <GitBranch size={12} className="text-gray-400" />
         <span className="hidden truncate sm:inline max-w-[180px]">{label}</span>
-        <span className="inline rounded bg-gray-800 px-1 py-0 text-[10px] text-gray-400 sm:ml-1">
+        <span className="inline rounded bg-gray-800 px-1 py-0 text-xs text-gray-400 sm:ml-1">
           {files.length} {files.length === 1 ? "file" : "files"}
         </span>
       </button>
@@ -89,7 +89,7 @@ export default function GitHubGroundingIndicator({ repo, events }: GitHubGroundi
                       <code className="truncate text-[12px] text-gray-200">{entry.file}</code>
                     </div>
                     {entry.agentId && (
-                      <span className="shrink-0 text-[10px] text-gray-500">
+                      <span className="shrink-0 text-xs text-gray-500">
                         {agentLabel[entry.agentId] ?? entry.agentId}
                       </span>
                     )}

@@ -101,7 +101,7 @@ export default function RoundEtaIndicator({
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900/70 px-2 py-0.5 text-[11px]"
+      className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900/70 px-2 py-0.5 text-xs"
       title={
         etaMs === null
           ? "No prior rounds — estimate will appear after the first completes"

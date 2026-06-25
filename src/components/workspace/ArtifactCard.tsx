@@ -47,17 +47,32 @@ const typeIconColors: Record<ArtifactType, string> = {
   recommendation: "text-blue-400",
 };
 
-const statusColors: Record<ArtifactStatus, string> = {
-  draft: "bg-yellow-900/50 text-yellow-400 border-yellow-700",
-  accepted: "bg-green-900/50 text-green-400 border-green-700",
-  rejected: "bg-red-900/50 text-red-400 border-red-700",
+const typeLabels: Record<ArtifactType, string> = {
+  decision: "Decision",
+  risk: "Risk",
+  assumption: "Assumption",
+  tradeoff: "Tradeoff",
+  "open-question": "Open question",
+  recommendation: "Recommendation",
 };
 
-const agentDotColors: Record<AgentType, string> = {
-  "senior-engineer": "bg-blue-500",
-  "security-engineer": "bg-red-500",
-  "performance-engineer": "bg-amber-500",
-  "product-engineer": "bg-violet-500",
+const statusTextColors: Record<ArtifactStatus, string> = {
+  draft: "text-amber-300",
+  accepted: "text-green-300",
+  rejected: "text-red-300",
+};
+
+const statusLabels: Record<ArtifactStatus, string> = {
+  draft: "Draft",
+  accepted: "Accepted",
+  rejected: "Rejected",
+};
+
+const agentLabels: Record<AgentType, string> = {
+  "senior-engineer": "Senior",
+  "security-engineer": "Security",
+  "performance-engineer": "Performance",
+  "product-engineer": "Product",
 };
 
 export default function ArtifactCard({ artifact, sessionId, onStatusChange }: ArtifactCardProps) {
@@ -83,7 +98,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Server returned ${res.status}`);
+        throw new Error(body.error ?? "Failed to update artifact. Please try again.");
       }
       onStatusChange?.();
       // Server is now the source of truth — drop the override on next render cycle.
@@ -103,65 +118,57 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
     <>
       <div
         className={`
-          group relative border-l-4 rounded-xl bg-gray-900/50 border border-gray-700
+          group relative rounded-lg border border-l-4 border-gray-700 bg-gray-900/50
           hover:-translate-y-px hover:shadow-lg hover:shadow-black/20
           transition-all duration-200 cursor-pointer
           ${typeBorderColors[artifact.type]}
         `}
         onClick={() => setExpanded(true)}
       >
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Header: Icon + Title */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2 pr-11 sm:gap-3 sm:pr-12">
             <div className={`shrink-0 mt-0.5 ${typeIconColors[artifact.type]}`}>
-              <Icon size={20} />
+              <Icon size={18} className="sm:h-5 sm:w-5" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-medium text-gray-100 line-clamp-2 leading-snug">
                 {artifact.title}
               </h3>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400 sm:text-sm">
+                <span
+                  className={`font-medium ${statusTextColors[effectiveStatus]} ${
+                    optimisticStatus ? "opacity-80" : ""
+                  }`}
+                  title={optimisticStatus ? "Saving..." : undefined}
+                >
+                  {statusLabels[effectiveStatus]}
+                </span>
+                <span aria-hidden="true" className="text-gray-600">/</span>
+                <span>{typeLabels[artifact.type]}</span>
+                {artifact.version > 1 && (
+                  <>
+                    <span aria-hidden="true" className="text-gray-600">/</span>
+                    <span className="font-mono">v{artifact.version}</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-
-          {/* Status and type */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 pr-12">
-            <span
-              className={`px-2 py-1 text-sm rounded-md border ${statusColors[effectiveStatus]} ${
-                optimisticStatus ? "opacity-80" : ""
-              }`}
-              title={optimisticStatus ? "Saving…" : undefined}
-            >
-              {effectiveStatus}
-            </span>
-            <span className="px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-gray-300">
-              {artifact.type}
-            </span>
           </div>
 
           {/* Content Preview */}
           {artifact.content && (
-            <p className="mt-3 text-sm text-gray-300 line-clamp-2 leading-relaxed">
+            <p className="mt-2 line-clamp-1 text-sm leading-relaxed text-gray-300 sm:mt-3 sm:line-clamp-2">
               {artifact.content}
             </p>
           )}
 
-          {/* Meta: Contributors + Version */}
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {artifact.contributors.map((contributor) => (
-                <div
-                  key={contributor}
-                  className={`w-2.5 h-2.5 rounded-full ${agentDotColors[contributor] || "bg-gray-500"}`}
-                  title={contributor}
-                />
-              ))}
-            </div>
-            {artifact.version > 1 && (
-              <span className="text-[10px] text-gray-500 font-mono">
-                v{artifact.version}
-              </span>
-            )}
-          </div>
+          {/* Meta: Contributors */}
+          {artifact.contributors.length > 0 && (
+            <p className="mt-2 truncate text-xs text-gray-500 sm:mt-3 sm:text-sm">
+              Contributors: {artifact.contributors.map((contributor) => agentLabels[contributor] ?? contributor).join(", ")}
+            </p>
+          )}
         </div>
 
         {/* Status Change Dropdown - always visible for draft artifacts */}
@@ -173,7 +180,7 @@ export default function ArtifactCard({ artifact, sessionId, onStatusChange }: Ar
             <button
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               disabled={isUpdating}
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-gray-800 border border-gray-600 text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-60"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-gray-800 border border-gray-600 text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-60 sm:min-h-11 sm:min-w-11"
               aria-label="Change artifact status"
             >
               <ChevronDown size={14} />
