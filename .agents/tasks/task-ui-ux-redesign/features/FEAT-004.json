@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "RepoScope Export + Replay Language Layer: Update exported reports and replay/history views to use RepoScope language instead of old decision-review language.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update src/lib/export.ts: Change 'Engineering Room Session' to 'Repo Review Report', 'Artifacts' heading to 'Findings', 'Final Consensus' to 'Agent Agreement', 'session-export-' filename prefix to 'reposcope-report-'",
     "Update src/app/api/sessions/[sessionId]/export/route.ts: Update JSDoc comments to use RepoScope language (report instead of debate history/artifacts/consensus)",
@@ -28,5 +28,5 @@
     "npm run test -- src/components/workspace/__tests__/ui-logic.test.ts exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All export and replay language changes applied successfully. Build passes (next build exit 0), lint passes (0 errors, 20 pre-existing warnings), and all 26 unit tests pass. The 5 changed files touch only user-facing strings. Internal variable names (artifact, consensus, etc.) are preserved unchanged."
 }
