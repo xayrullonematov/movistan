@@ -227,7 +227,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const tabs = useMemo(() => [
     { id: "results", label: "Report" },
     { id: "artifacts", label: "Findings", badge: session.artifacts.length || undefined },
-    { id: "debate", label: "Evidence" },
+    { id: "debate", label: "Agent Debate" },
   ], [session.artifacts.length]);
 
   const handleStartRound = useCallback(async () => {

@@ -80,7 +80,7 @@ function ConsensusMeter({
     <>
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 sm:hidden">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium text-gray-300">Consensus</span>
+          <span className="text-sm font-medium text-gray-300">Agent Agreement</span>
           <span className={`text-sm font-bold ${getColor(percentage)}`}>{percentage}%</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
@@ -97,7 +97,7 @@ function ConsensusMeter({
 
       <div className="hidden rounded-xl border border-gray-700 bg-gray-800/50 p-4 sm:block">
         <h3 className="text-sm font-medium text-gray-300 mb-3">
-          Consensus Level
+          Agreement Level
         </h3>
         <div className="flex items-center gap-4">
           <div className="relative w-20 h-20">
@@ -172,7 +172,7 @@ export default function ResultsDashboard({
       <div className="h-full overflow-y-auto px-3 py-3 space-y-4 sm:px-4 sm:py-4 sm:space-y-5">
         {/* Problem statement — always visible */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-50 sm:text-xl">Decision Report</h2>
+          <h2 className="text-lg font-semibold text-gray-50 sm:text-xl">Review Report</h2>
           <p className="mt-2 text-sm leading-relaxed text-gray-300">{session.problemDescription}</p>
         </div>
 
@@ -183,7 +183,7 @@ export default function ResultsDashboard({
             <ul className="space-y-1">
               {session.constraints.map((c, i) => (
                 <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
-                  <span className="text-emerald-500 mt-0.5 shrink-0">—</span>
+                  <span className="text-violet-400 mt-0.5 shrink-0">—</span>
                   <span>{c.text}</span>
                 </li>
               ))}
@@ -216,7 +216,7 @@ export default function ResultsDashboard({
         {!hasArtifacts && (
           <div className="rounded-lg border border-gray-700/50 bg-gray-800/30 px-4 py-3 text-center">
             <p className="text-sm text-gray-400">
-              The full report will appear here after the first round completes.
+              The review report will appear here after analysis completes.
             </p>
           </div>
         )}
@@ -227,7 +227,7 @@ export default function ResultsDashboard({
   // Derive headline from top recommended decision or overall confidence
   const topDecision = consensus.recommendedDecisions?.[0];
   const headline = topDecision
-    ? `Recommendation: ${topDecision.title} \u2014 confidence ${formatConfidence(topDecision.confidence)}%`
+    ? `Top finding: ${topDecision.title} \u2014 confidence ${formatConfidence(topDecision.confidence)}%`
     : `Overall Confidence: ${formatConfidence(consensus.overallConfidence || 0)}%`;
 
   // Sort decisions by confidence descending
@@ -249,8 +249,8 @@ export default function ResultsDashboard({
   return (
     <div className="h-full overflow-y-auto px-3 py-3 space-y-3 sm:px-4 sm:py-4 sm:space-y-5">
       {/* Headline / TL;DR */}
-      <div className="rounded-lg bg-emerald-500/8 border border-emerald-600/30 px-4 py-3">
-        <p className="text-base font-semibold text-emerald-100">{headline}</p>
+      <div className="rounded-lg bg-violet-500/8 border border-violet-600/30 px-4 py-3">
+        <p className="text-base font-semibold text-violet-100">{headline}</p>
         <p className="mt-1 text-sm text-gray-400 line-clamp-2">{session.problemDescription}</p>
       </div>
 
@@ -264,7 +264,7 @@ export default function ResultsDashboard({
       {sortedDecisions.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-3">
-            Key Decisions
+            Key Findings
           </h3>
           <div className="space-y-2">
             {cappedDecisions.map((decision, i) => (
@@ -289,7 +289,7 @@ export default function ResultsDashboard({
           {hasMoreDecisions && (
             <button
               onClick={() => setShowAllDecisions(!showAllDecisions)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-violet-300 hover:text-violet-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70 rounded"
               aria-expanded={showAllDecisions}
             >
               {showAllDecisions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -303,7 +303,7 @@ export default function ResultsDashboard({
       {sortedRisks.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-3">
-            Risk Register
+            Risks Found
           </h3>
           <div className="space-y-2 sm:hidden">
             {cappedRisks.map((risk, i) => (
@@ -360,7 +360,7 @@ export default function ResultsDashboard({
           {hasMoreRisks && (
             <button
               onClick={() => setShowAllRisks(!showAllRisks)}
-              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 rounded"
+              className="mt-2 flex min-h-10 items-center gap-1 text-sm text-violet-300 hover:text-violet-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70 rounded"
               aria-expanded={showAllRisks}
             >
               {showAllRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

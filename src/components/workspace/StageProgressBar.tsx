@@ -18,12 +18,13 @@ interface StageProgressBarProps {
 const stages: {
   id: RoundStage;
   label: string;
+  description: string;
   icon: typeof MessageSquare;
 }[] = [
-  { id: "proposal", label: "Proposal", icon: MessageSquare },
-  { id: "critique", label: "Critique", icon: Search },
-  { id: "revision", label: "Revision", icon: RefreshCw },
-  { id: "consensus", label: "Consensus", icon: CheckCircle },
+  { id: "proposal", label: "Scanning", description: "Agents inspect files and gather initial findings", icon: MessageSquare },
+  { id: "critique", label: "Reviewing", description: "Agents challenge risks and verify likely issues", icon: Search },
+  { id: "revision", label: "Refining", description: "Agents improve findings and fixes", icon: RefreshCw },
+  { id: "consensus", label: "Finalizing", description: "Agents produce the review report", icon: CheckCircle },
 ];
 
 export default function StageProgressBar({
@@ -41,10 +42,14 @@ export default function StageProgressBar({
     return "pending";
   };
 
+  const stageLabel = currentStage
+    ? stages.find((s) => s.id === currentStage)?.label ?? currentStage
+    : null;
+
   const currentLabel = currentStage
     ? currentStage === "awaiting-intervention"
       ? `Round ${currentRound}: review needed`
-      : `Round ${currentRound}: ${currentStage} in progress`
+      : `Round ${currentRound}: ${stageLabel} in progress`
     : currentRound === 0
       ? "Ready to start first round"
       : `Round ${currentRound}: waiting for next action`;
@@ -56,7 +61,7 @@ export default function StageProgressBar({
           {showIntervention ? (
             <Hand size={17} className="shrink-0 text-yellow-300" />
           ) : currentStage ? (
-            <RefreshCw size={17} className="shrink-0 text-emerald-300" />
+            <RefreshCw size={17} className="shrink-0 text-violet-300" />
           ) : (
             <MessageSquare size={17} className="shrink-0 text-gray-300" />
           )}
@@ -80,15 +85,16 @@ export default function StageProgressBar({
                     state === "completed"
                       ? "bg-green-500/15 border border-green-600/50"
                       : state === "active"
-                        ? "bg-emerald-500/10 border border-emerald-500/50"
+                        ? "bg-violet-500/10 border border-violet-500/50"
                         : "bg-gray-800/50 border border-gray-700"
                   }
                 `}
+                title={stage.description}
               >
                 {/* Active segment fill */}
                 {state === "active" && (
                   <div className="absolute inset-0 rounded-lg overflow-hidden">
-                    <div className="absolute inset-0 bg-emerald-500/5" />
+                    <div className="absolute inset-0 bg-violet-500/5" />
                   </div>
                 )}
 
@@ -100,7 +106,7 @@ export default function StageProgressBar({
                       size={16}
                       className={`shrink-0 ${
                         state === "active"
-                          ? "text-emerald-300 animate-pulse"
+                          ? "text-violet-300 animate-pulse"
                           : "text-gray-500"
                       }`}
                     />
@@ -110,7 +116,7 @@ export default function StageProgressBar({
                       state === "completed"
                         ? "text-green-400"
                         : state === "active"
-                          ? "text-emerald-300"
+                          ? "text-violet-300"
                           : "text-gray-500"
                     }`}
                   >
