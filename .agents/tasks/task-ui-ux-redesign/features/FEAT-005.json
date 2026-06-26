@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "chore",
   "description": "RepoScope Session List / Session Cards Language Audit: Update all user-facing session list, card, and navigation copy to use 'review' instead of 'session/debate' language.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update src/app/sessions/page.tsx: 'My sessions' -> 'My reviews', subtitle and 'New session' button",
     "Update src/components/session/SessionsTable.tsx: empty states, search placeholder, footer text",
@@ -24,5 +24,5 @@
     "npm run lint exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All session list/card/nav copy updated to RepoScope review language. 7 source files changed (copy only). Build passes (next build exit 0), lint passes (0 errors, 20 pre-existing warnings), tests pass (164/180, 16 pre-existing DB lock failures). Internal variable names (SessionSummary, SessionList, etc.), route paths (/sessions), and API endpoints all preserved unchanged."
 }
