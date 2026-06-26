@@ -600,6 +600,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                 {activeTab === "results" && (
                   <ResultsDashboard
                     session={session}
+                    config={session.config}
                     onExport={handleExportFromResults}
                   />
                 )}

@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { deriveSummary } from "../DebateMessage";
-import { formatConfidence } from "../ResultsDashboard";
+import { formatConfidence, deriveVerdict } from "../ResultsDashboard";
 import { buildReplayMilestones } from "../ReplayScrubber";
 import { parseStageProgress } from "../ToolCallTrace";
 import type { PersistedEvent } from "@/types/domain";
@@ -97,6 +97,72 @@ describe("formatConfidence", () => {
   it("handles edge case of 1.0 as 100%", () => {
     // Exactly 1 is treated as a fraction (1 * 100 = 100)
     expect(formatConfidence(1.0)).toBe(100);
+  });
+});
+
+// ---------- deriveVerdict ----------
+
+describe("deriveVerdict", () => {
+  it("returns 'Ready to ship' for high score with no risks", () => {
+    const result = deriveVerdict(90, []);
+    expect(result.label).toBe("Ready to ship");
+  });
+
+  it("never returns 'Ready to ship' when high-severity risks exist", () => {
+    const risks = [{ severity: "high" as const }];
+    const result = deriveVerdict(95, risks);
+    expect(result.label).toBe("Fix before shipping");
+  });
+
+  it("returns 'Fix before shipping' for multiple high risks even with high score", () => {
+    const risks = [{ severity: "high" as const }, { severity: "high" as const }];
+    const result = deriveVerdict(99, risks);
+    expect(result.label).toBe("Fix before shipping");
+  });
+
+  it("warns when 3 or more medium risks exist despite high score", () => {
+    const risks = [
+      { severity: "medium" as const },
+      { severity: "medium" as const },
+      { severity: "medium" as const },
+    ];
+    const result = deriveVerdict(85, risks);
+    expect(result.label).toBe("Fix before shipping");
+  });
+
+  it("allows 'Ready to ship' with only 2 medium risks and high score", () => {
+    const risks = [
+      { severity: "medium" as const },
+      { severity: "medium" as const },
+    ];
+    const result = deriveVerdict(85, risks);
+    expect(result.label).toBe("Ready to ship");
+  });
+
+  it("returns 'Fix before shipping' for mid-range score without risks", () => {
+    const result = deriveVerdict(65, []);
+    expect(result.label).toBe("Fix before shipping");
+  });
+
+  it("returns 'Needs significant work' for low score", () => {
+    const result = deriveVerdict(40, []);
+    expect(result.label).toBe("Needs significant work");
+  });
+
+  it("defaults to empty risks array when not provided", () => {
+    const result = deriveVerdict(90);
+    expect(result.label).toBe("Ready to ship");
+  });
+
+  it("low risks do not affect the verdict", () => {
+    const risks = [
+      { severity: "low" as const },
+      { severity: "low" as const },
+      { severity: "low" as const },
+      { severity: "low" as const },
+    ];
+    const result = deriveVerdict(85, risks);
+    expect(result.label).toBe("Ready to ship");
   });
 });
 

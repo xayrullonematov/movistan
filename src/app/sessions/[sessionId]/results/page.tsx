@@ -4,7 +4,7 @@ import { use } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { ArrowLeft } from "lucide-react";
-import type { SessionState } from "@/types/domain";
+import type { SessionState, SessionConfig } from "@/types/domain";
 import ResultsDashboard, {
   ResultsDashboardSkeleton,
 } from "@/components/workspace/ResultsDashboard";
@@ -18,7 +18,7 @@ export default function ResultsPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = use(params);
-  const { data, error, isLoading } = useSWR<SessionState>(
+  const { data, error, isLoading } = useSWR<SessionState & { config?: SessionConfig }>(
     `/api/sessions/${sessionId}`,
     fetcher,
   );
@@ -73,7 +73,7 @@ export default function ResultsPage({
             </div>
           </div>
         ) : (
-          <ResultsDashboard session={data} onExport={handleExport} />
+          <ResultsDashboard session={data} config={data.config} onExport={handleExport} />
         )}
       </div>
     </div>

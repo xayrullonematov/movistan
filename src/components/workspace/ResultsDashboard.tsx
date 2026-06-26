@@ -12,11 +12,12 @@ import {
   Lightbulb,
   ShieldAlert,
 } from "lucide-react";
-import type { SessionState, AgentType, Severity } from "@/types/domain";
+import type { SessionState, SessionConfig, AgentType, Severity } from "@/types/domain";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface ResultsDashboardProps {
   session: SessionState;
+  config?: SessionConfig;
   onExport?: () => void;
   loading?: boolean;
 }
@@ -71,8 +72,25 @@ export function formatConfidence(confidence: number): number {
   return Math.round(confidence * 100);
 }
 
-/** Derive a short verdict label from the overall confidence score. */
-function deriveVerdict(score: number): { label: string; color: string; icon: typeof CheckCircle2 } {
+/** Derive a short verdict label from the overall confidence score and risk data. */
+export function deriveVerdict(
+  score: number,
+  risks: { severity: Severity }[] = []
+): { label: string; color: string; icon: typeof CheckCircle2 } {
+  const highRiskCount = risks.filter((r) => r.severity === "high").length;
+  const mediumRiskCount = risks.filter((r) => r.severity === "medium").length;
+
+  // High-severity risks always block a "Ready to ship" verdict
+  if (highRiskCount > 0) {
+    return { label: "Fix before shipping", color: "text-amber-400", icon: AlertTriangle };
+  }
+
+  // Multiple medium risks should also warn the user
+  if (mediumRiskCount >= 3) {
+    return { label: "Fix before shipping", color: "text-amber-400", icon: AlertTriangle };
+  }
+
+  // Score-based fallback
   if (score >= 80) return { label: "Ready to ship", color: "text-green-400", icon: CheckCircle2 };
   if (score >= 60) return { label: "Fix before shipping", color: "text-amber-400", icon: AlertTriangle };
   return { label: "Needs significant work", color: "text-red-400", icon: XCircle };
@@ -149,6 +167,7 @@ function ScoreRing({ score, size = 64 }: { score: number; size?: number }) {
 
 export default function ResultsDashboard({
   session,
+  config,
   onExport,
   loading = false,
 }: ResultsDashboardProps) {
@@ -256,8 +275,6 @@ export default function ResultsDashboard({
 
   // ─── Main report: consensus available ────────────────────────────────────────
   const score = formatConfidence(consensus.overallConfidence || 0);
-  const verdict = deriveVerdict(score);
-  const VerdictIcon = verdict.icon;
 
   const agreements = consensus.agreements || [];
   const disagreements = consensus.disagreements || [];
@@ -270,6 +287,9 @@ export default function ResultsDashboard({
   const risks = [...(consensus.identifiedRisks || [])];
   const severityOrder: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
   risks.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+  const verdict = deriveVerdict(score, risks);
+  const VerdictIcon = verdict.icon;
 
   const decisions = [...(consensus.recommendedDecisions || [])].sort(
     (a, b) => b.confidence - a.confidence
@@ -300,6 +320,12 @@ export default function ResultsDashboard({
             <h2 className="text-lg font-semibold text-[#F8FAFC] sm:text-xl">
               Review Report
             </h2>
+            {config?.githubRepo && (
+              <p className="mt-1 text-xs text-[#64748B] font-mono">
+                {config.githubRepo.owner}/{config.githubRepo.repo}
+                {config.githubRepo.branch ? ` (${config.githubRepo.branch})` : ""}
+              </p>
+            )}
             <p className="mt-1 text-sm text-[#94A3B8] line-clamp-2">
               {session.problemDescription}
             </p>
@@ -311,9 +337,6 @@ export default function ResultsDashboard({
           <VerdictIcon size={16} className={verdict.color} />
           <span className={`text-sm font-semibold ${verdict.color}`}>
             {verdict.label}
-          </span>
-          <span className="text-[#64748B] text-xs font-mono ml-auto">
-            {score}/100
           </span>
         </div>
         <p className="mt-2 text-sm text-[#94A3B8] leading-relaxed">
@@ -517,7 +540,7 @@ export default function ResultsDashboard({
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 size={16} className="text-[#94A3B8]" />
             <h3 className="text-sm font-semibold text-[#F8FAFC]">
-              Agent Agreement
+              Review Confidence
             </h3>
             <span className="ml-auto text-xs font-mono text-[#64748B]">
               {agreeCount}/{totalPoints} points
