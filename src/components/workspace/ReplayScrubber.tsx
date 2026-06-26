@@ -58,13 +58,13 @@ const eventLabel: Record<string, string> = {
   proposal: "Proposal",
   critique: "Critique",
   revision: "Revision",
-  consensus: "Consensus",
-  "consensus-update": "Consensus update",
+  consensus: "Agent agreement",
+  "consensus-update": "Agreement update",
   "user-intervention": "User intervention",
   "clarification-request": "Clarification request",
-  "artifact-created": "Artifact created",
-  "artifact-updated": "Artifact updated",
-  "artifact-status-changed": "Artifact status changed",
+  "artifact-created": "Finding created",
+  "artifact-updated": "Finding updated",
+  "artifact-status-changed": "Finding status changed",
   "stage-progress": "Stage progress",
 };
 
@@ -72,7 +72,7 @@ const stageLabels: Record<RoundStage, string> = {
   proposal: "Proposal",
   critique: "Critique",
   revision: "Revision",
-  consensus: "Consensus",
+  consensus: "Agreement",
   "awaiting-intervention": "Awaiting input",
 };
 
@@ -88,7 +88,7 @@ const artifactTypeLabels: Record<ArtifactType, string> = {
   assumption: "Assumption",
   tradeoff: "Tradeoff",
   "open-question": "Open question",
-  recommendation: "Recommendation",
+  recommendation: "Fix",
 };
 
 const agentLabels: Record<AgentType, string> = {
@@ -195,7 +195,7 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
       case "session-created": {
         const problem = getString(content, "problemDescription");
         addMilestone(event, eventIndex, content, {
-          title: "Decision review created",
+          title: "Review started",
           description: problem ? truncate(problem, 140) : "The review workspace was opened.",
           source: "Session",
           tone: "neutral",
@@ -206,7 +206,7 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const round = getRound(event, content, activeRound);
         addMilestone(event, eventIndex, content, {
           title: round ? `Round ${round} started` : "Round started",
-          description: "Agents began another pass through proposals, critiques, revisions, and consensus.",
+          description: "Agents began another pass through proposals, critiques, revisions, and agreement.",
           source: "Round lifecycle",
           tone: "stage",
         });
@@ -232,11 +232,11 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const decision = getConsensusDecision(content);
         const confidence = formatPercent(decision.confidence ?? getNumber(content, "overallConfidence"));
         addMilestone(event, eventIndex, content, {
-          title: decision.title ? `Consensus: ${truncate(decision.title, 72)}` : "Consensus synthesized",
+          title: decision.title ? `Agreement: ${truncate(decision.title, 72)}` : "Agreement synthesized",
           description: confidence
-            ? `The shared recommendation was synthesized with ${confidence} confidence.`
-            : "The shared recommendation, risks, and open questions were synthesized.",
-          source: "Consensus",
+            ? `The agents reached agreement with ${confidence} confidence.`
+            : "The agents synthesized their agreement on findings, risks, and open questions.",
+          source: "Agent agreement",
           tone: "decision",
         });
         break;
@@ -247,10 +247,10 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const title = getString(content, "title");
         if (artifactId) artifactsById.set(artifactId, { title, type });
 
-        const typeLabel = type && artifactTypeLabels[type] ? artifactTypeLabels[type] : "Artifact";
+        const typeLabel = type && artifactTypeLabels[type] ? artifactTypeLabels[type] : "Finding";
         addMilestone(event, eventIndex, content, {
           title: `${typeLabel} added`,
-          description: title ? truncate(title, 130) : "A new report item was added to the review.",
+          description: title ? truncate(title, 130) : "A new finding was added to the review.",
           source: sourceLabel(event),
           tone: type === "risk" ? "risk" : "decision",
         });
@@ -261,12 +261,12 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const known = artifactId ? artifactsById.get(artifactId) : undefined;
         const version = getNumber(content, "version");
         addMilestone(event, eventIndex, content, {
-          title: known?.type === "risk" ? "Risk refined" : "Report item refined",
+          title: known?.type === "risk" ? "Risk refined" : "Finding refined",
           description: known?.title
             ? `${truncate(known.title, 112)}${version ? ` moved to version ${version}.` : " was updated."}`
             : version
-              ? `A report item moved to version ${version}.`
-              : "A report item was updated.",
+              ? `A finding moved to version ${version}.`
+              : "A finding was updated.",
           source: sourceLabel(event),
           tone: known?.type === "risk" ? "risk" : "decision",
         });
@@ -277,10 +277,10 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const known = artifactId ? artifactsById.get(artifactId) : undefined;
         const status = getString(content, "newStatus");
         addMilestone(event, eventIndex, content, {
-          title: status === "accepted" ? "Report item accepted" : status === "rejected" ? "Report item rejected" : "Report item status changed",
+          title: status === "accepted" ? "Finding accepted" : status === "rejected" ? "Finding rejected" : "Finding status changed",
           description: known?.title
             ? `${truncate(known.title, 120)} is now ${status ?? "updated"}.`
-            : `A report item is now ${status ?? "updated"}.`,
+            : `A finding is now ${status ?? "updated"}.`,
           source: sourceLabel(event),
           tone: status === "rejected" ? "warning" : "success",
         });
@@ -312,7 +312,7 @@ export function buildReplayMilestones(events: PersistedEvent[]): ReplayMilestone
         const round = getRound(event, content, activeRound);
         addMilestone(event, eventIndex, content, {
           title: round ? `Round ${round} completed` : "Round completed",
-          description: "The decision report, risks, and open questions were ready for review.",
+          description: "The review report, risks, and open questions were ready for review.",
           source: "Round lifecycle",
           tone: "success",
         });
@@ -402,7 +402,7 @@ export default function ReplayScrubber({ sessionId }: ReplayScrubberProps) {
       <div className="rounded-lg border border-[#34362f] bg-[#151712]/85 p-4">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-100">Decision history</p>
+            <p className="text-sm font-medium text-gray-100">Review history</p>
             <p className="text-xs text-gray-500">
               {progressPercent}% reviewed - {milestones.length} milestone{milestones.length === 1 ? "" : "s"}
             </p>
@@ -498,7 +498,7 @@ export default function ReplayScrubber({ sessionId }: ReplayScrubberProps) {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-gray-100">Milestones</h2>
-              <p className="text-xs text-gray-500">A readable summary of how the decision report came together.</p>
+              <p className="text-xs text-gray-500">A readable summary of how the review report came together.</p>
             </div>
           </div>
 

@@ -3,8 +3,8 @@
  *
  * GET /api/sessions/[sessionId]/export - Export session as markdown report
  *
- * Returns a complete markdown report of the session's debate history,
- * artifacts, consensus, and cost breakdown.
+ * Returns a complete markdown report of the session's review results,
+ * findings, agent agreement, and cost breakdown.
  *
  * Query param: ?format=json returns { markdown, filename }
  * Default: returns Content-Type: text/markdown with the export string

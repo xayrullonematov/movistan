@@ -264,11 +264,11 @@ describe("buildReplayMilestones", () => {
     const milestones = buildReplayMilestones(events);
 
     expect(milestones.map((milestone) => milestone.title)).toEqual([
-      "Decision review created",
+      "Review started",
       "Round 1 started",
       "Proposal stage completed",
       "Critique stage completed",
-      "Consensus: Ship behind a feature flag",
+      "Agreement: Ship behind a feature flag",
       "Risk added",
       "Round 1 completed",
     ]);

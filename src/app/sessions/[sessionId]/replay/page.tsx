@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ReplayScrubber from "@/components/workspace/ReplayScrubber";
 
 export const metadata: Metadata = {
-  title: "Decision history - RepoScope",
+  title: "Review history - RepoScope",
 };
 
 interface ReplayPageProps {
@@ -25,9 +25,9 @@ export default async function SessionReplayPage({ params }: ReplayPageProps) {
       </Link>
 
       <header className="mt-4">
-        <h1 className="text-xl font-semibold text-gray-100">Decision history</h1>
+        <h1 className="text-xl font-semibold text-gray-100">Review history</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Review the milestones that shaped the final recommendation.
+          Review the milestones that shaped the final report.
         </p>
       </header>
 

@@ -1,9 +1,9 @@
 /**
  * Session Export Service
  *
- * Generates a comprehensive markdown report of a session's entire debate
- * history, including problem description, constraints, artifacts, round
- * summaries, consensus, agent positions, and cost breakdown.
+ * Generates a comprehensive markdown report of a session's review results,
+ * including problem description, constraints, findings, round summaries,
+ * agent agreement, agent positions, and cost breakdown.
  */
 
 import { snapshotManager } from "@/lib/snapshot-manager";
@@ -97,7 +97,7 @@ export async function generateSessionExport(
   const sections: string[] = [];
 
   // Title
-  sections.push(`# Engineering Room Session: ${title}`);
+  sections.push(`# Repo Review Report: ${title}`);
   sections.push("");
 
   // Problem Description
@@ -116,9 +116,9 @@ export async function generateSessionExport(
     sections.push("");
   }
 
-  // Artifacts
+  // Findings
   if (state.artifacts.length > 0) {
-    sections.push("## Artifacts");
+    sections.push("## Findings");
     sections.push("");
     for (const artifact of state.artifacts) {
       sections.push(formatArtifact(artifact));
@@ -195,9 +195,9 @@ export async function generateSessionExport(
     }
   }
 
-  // Final Consensus
+  // Agent Agreement
   if (state.consensus) {
-    sections.push("## Final Consensus");
+    sections.push("## Agent Agreement");
     sections.push("");
 
     if (state.consensus.agreements.length > 0) {
@@ -266,7 +266,7 @@ export async function generateSessionExport(
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 50);
-  const filename = `session-export-${sanitizedTitle}-${new Date().toISOString().split("T")[0]}.md`;
+  const filename = `reposcope-report-${sanitizedTitle}-${new Date().toISOString().split("T")[0]}.md`;
 
   return { markdown, filename };
 }
