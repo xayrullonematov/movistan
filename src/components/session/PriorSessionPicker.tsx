@@ -73,7 +73,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
       <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
         <header className="flex items-center justify-between border-b border-gray-800 px-5 py-3">
           <div className="flex items-center gap-2">
-            <FileText size={16} className="text-blue-400" />
+            <FileText size={16} className="text-violet-400" />
             <h2 className="text-sm font-semibold text-gray-100">Import a prior session</h2>
           </div>
           <button
@@ -94,7 +94,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
               placeholder="Search by title…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function PriorSessionPicker({ onClose, onPick }: PriorSessionPick
                         Round {session.currentRound} · {session.status} · {timeAgo(session.createdAt)}
                       </p>
                     </div>
-                    {pickingId === session.id && <Loader2 size={14} className="animate-spin text-blue-400" />}
+                    {pickingId === session.id && <Loader2 size={14} className="animate-spin text-violet-400" />}
                   </button>
                 </li>
               ))}

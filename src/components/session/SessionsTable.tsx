@@ -106,13 +106,13 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
             placeholder="Search by title or problem…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="min-h-11 w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="min-h-11 w-full rounded-md border border-gray-700 bg-gray-950/70 py-2 pl-9 pr-3 text-sm text-gray-100 placeholder:text-gray-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="min-h-11 w-32 shrink-0 rounded-md border border-gray-700 bg-gray-950/70 px-2 py-2 text-sm text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-auto sm:px-3"
+          className="min-h-11 w-32 shrink-0 rounded-md border border-gray-700 bg-gray-950/70 px-2 py-2 text-sm text-gray-100 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 sm:w-auto sm:px-3"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>
@@ -218,7 +218,7 @@ function SessionCard({ session }: { session: SessionSummary }) {
   return (
     <Link
       href={`/sessions/${session.id}`}
-      className="block rounded-lg border border-gray-800 bg-gray-900/50 p-3 transition-colors hover:border-gray-700 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+      className="block rounded-lg border border-gray-800 bg-gray-900/50 p-3 transition-colors hover:border-gray-700 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/70"
     >
       <div className="flex items-start justify-between gap-3">
         <h2 className="line-clamp-2 text-sm font-medium leading-snug text-gray-100">{title}</h2>

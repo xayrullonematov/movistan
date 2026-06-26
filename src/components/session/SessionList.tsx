@@ -70,7 +70,7 @@ export default function SessionList({ sessions, loading = false }: SessionListPr
         </h3>
         <button
           onClick={() => router.push("/sessions")}
-          className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+          className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
         >
           View all &rarr;
         </button>
@@ -81,7 +81,7 @@ export default function SessionList({ sessions, loading = false }: SessionListPr
           <button
             key={session.id}
             onClick={() => router.push(`/sessions/${session.id}`)}
-            className="flex items-center gap-3 rounded-lg border border-[#2f312b] bg-[#151712] px-4 py-3 text-left transition-all hover:border-emerald-500/30 hover:bg-[#1a1c17]"
+            className="flex items-center gap-3 rounded-lg border border-[#2f312b] bg-[#151712] px-4 py-3 text-left transition-all hover:border-violet-500/30 hover:bg-[#1a1c17]"
           >
             <StatusDot status={session.status} />
             <div className="min-w-0 flex-1">
