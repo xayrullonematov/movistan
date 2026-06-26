@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "fix",
   "description": "Fix verdict logic to account for high-severity risks, add report identity header with repo/question metadata, remove duplicate score display, and rename 'Agent Agreement' section to 'Review Confidence'.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Update deriveVerdict to accept risks array and never return 'Ready to ship' when high-severity risks exist; multiple medium risks should also warn.",
     "2. Add optional config prop (SessionConfig) to ResultsDashboardProps and display repo metadata in the top summary card if available.",
@@ -27,5 +27,5 @@
     "npm run test -- src/components/workspace/__tests__/ui-logic.test.ts exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All changes implemented in ResultsDashboard.tsx only. deriveVerdict is now exported and accepts an optional risks array. Build passes (next build exit 0), lint passes (0 errors, 20 pre-existing warnings), and all 35 unit tests pass (26 pre-existing + 9 new deriveVerdict tests). The optional config prop is additive and does not break existing callers."
 }
