@@ -4,7 +4,7 @@ import SettingsLayout from "@/components/settings/SettingsLayout";
 import SettingsLoadingState from "@/components/settings/LoadingState";
 
 export const metadata: Metadata = {
-  title: "Settings — AI Engineering Room",
+  title: "Settings - RepoScope",
   description: "Configure models, providers, budgets, and appearance.",
 };
 

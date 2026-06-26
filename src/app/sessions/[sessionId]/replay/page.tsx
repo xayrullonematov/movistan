@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ReplayScrubber from "@/components/workspace/ReplayScrubber";
 
 export const metadata: Metadata = {
-  title: "Decision history - AI Engineering Room",
+  title: "Decision history - RepoScope",
 };
 
 interface ReplayPageProps {
