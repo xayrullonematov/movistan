@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "fix",
   "description": "Fix the landing-to-review flow so the 'Analyze repo' action on the landing page creates a review and navigates directly to /sessions/{id}?start=1 instead of sending users to the reviews list with query params. Also reduce workspace chrome and ensure the header is clean.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Modify src/app/page.tsx handleAnalyze function: instead of routing to `/sessions?${params.toString()}`, make it call the POST /api/sessions endpoint directly (like NewSessionForm does), creating a session with the repo URL and selected review type, then navigate to `/sessions/{sessionId}?start=1`. Use the review type to generate a problemDescription string (reuse the reviewTypes mapping that already exists in NewSessionForm.tsx). Handle loading state and errors gracefully.",
     "Remove the query param handling from src/app/sessions/page.tsx if it exists (the sessions list page should not be trying to auto-create sessions from query params - that flow now lives on the landing page directly).",
@@ -22,5 +22,5 @@
     "Run `cd /projects/sandbox/movistan && npx vitest run` - no NEW test failures introduced"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All pre-existing test failures remain (19 backend DB timeouts + 1 UI deriveVerdict label mismatch). No new failures introduced. The sessions/page.tsx was already clean with no query param auto-handling. The End button was already scoped to activeTab=technical. Export was already scoped to session.consensus existing. StageTransitionToast moved to TechnicalActivityPanel with stageTransitions prop passed through."
 }
