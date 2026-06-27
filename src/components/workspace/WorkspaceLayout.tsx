@@ -9,11 +9,14 @@ import {
   ArrowRight,
   Play,
   History,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import type { SessionState, RoundStage, ArtifactType, ArtifactStatus } from "@/types/domain";
 import WorkspaceTabs from "./WorkspaceTabs";
 import MobileTabBar from "./MobileTabBar";
 import ArtifactCard from "./ArtifactCard";
+import FindingCard from "./FindingCard";
 import InterventionPanel from "./InterventionPanel";
 import NotificationBanner from "@/components/ui/NotificationBanner";
 import EmptyState from "@/components/ui/EmptyState";
@@ -61,6 +64,7 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
   const [artifactTypeFilter, setArtifactTypeFilter] = useState<ArtifactType | "all">("all");
   const [artifactStatusFilter, setArtifactStatusFilter] = useState<ArtifactStatus | "all">("all");
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const exportMenuRef = useRef<ExportMenuHandle>(null);
   const autoStartAttemptedRef = useRef(false);
   const recoveryKey = session.recoveredAt ?? null;
@@ -329,58 +333,79 @@ export default function WorkspaceLayout({ session, mutate }: WorkspaceLayoutProp
                       />
                     </div>
                   )}
-                  {isAwaitingIntervention && !hasPendingClarification && (
-                    <div className="mb-4">
-                      <InterventionPanel sessionId={session.id} />
+
+                  {/* Findings count header */}
+                  <div className="mb-3 flex items-center justify-between sm:mb-4">
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
+                      {filteredArtifacts.length} finding{filteredArtifacts.length !== 1 ? "s" : ""}
+                      {(artifactTypeFilter !== "all" || artifactStatusFilter !== "all") && (
+                        <span className="ml-1 text-[var(--text-muted)]">
+                          (filtered from {session.artifacts.length})
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFiltersOpen(!filtersOpen)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-elevated)] transition-colors"
+                      aria-expanded={filtersOpen}
+                    >
+                      <Filter size={12} />
+                      Filter findings
+                      <ChevronDown
+                        size={11}
+                        className={`transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Collapsed filter panel */}
+                  {filtersOpen && (
+                    <div className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+                        <select
+                          value={artifactTypeFilter}
+                          onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
+                          className="min-h-10 min-w-0 px-3 py-2 text-sm bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+                        >
+                          <option value="all">All findings</option>
+                          <option value="decision">Finding</option>
+                          <option value="risk">Risk</option>
+                          <option value="assumption">Assumption</option>
+                          <option value="tradeoff">Tradeoff</option>
+                          <option value="open-question">Question</option>
+                          <option value="recommendation">Fix</option>
+                        </select>
+                        <select
+                          value={artifactStatusFilter}
+                          onChange={(e) => setArtifactStatusFilter(e.target.value as ArtifactStatus | "all")}
+                          className="min-h-10 min-w-0 px-3 py-2 text-sm bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+                        >
+                          <option value="all">All Status ({artifactStatusCounts.all})</option>
+                          <option value="accepted">Accepted ({artifactStatusCounts.accepted})</option>
+                          <option value="draft">Draft ({artifactStatusCounts.draft})</option>
+                          <option value="rejected">Rejected ({artifactStatusCounts.rejected})</option>
+                        </select>
+                        {(artifactTypeFilter !== "all" || artifactStatusFilter !== "all") && (
+                          <button
+                            onClick={() => {
+                              setArtifactTypeFilter("all");
+                              setArtifactStatusFilter("all");
+                            }}
+                            className="min-h-10 px-3 py-2 text-sm bg-[var(--violet-soft-bg)] border border-[var(--brand-violet)]/40 rounded-lg text-violet-200 hover:bg-[var(--brand-violet)]/20 transition-colors"
+                          >
+                            Clear filters
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  {/* Filter Bar */}
-                  <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:flex sm:flex-wrap sm:items-center">
-                    <select
-                      value={artifactTypeFilter}
-                      onChange={(e) => setArtifactTypeFilter(e.target.value as ArtifactType | "all")}
-                      className="min-h-10 min-w-0 px-3 py-2 text-sm bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
-                    >
-                      <option value="all">All findings</option>
-                      <option value="decision">Finding</option>
-                      <option value="risk">Risk</option>
-                      <option value="assumption">Assumption</option>
-                      <option value="tradeoff">Tradeoff</option>
-                      <option value="open-question">Question</option>
-                      <option value="recommendation">Fix</option>
-                    </select>
-                    <select
-                      value={artifactStatusFilter}
-                      onChange={(e) => setArtifactStatusFilter(e.target.value as ArtifactStatus | "all")}
-                      className="min-h-10 min-w-0 px-3 py-2 text-sm bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
-                    >
-                      <option value="all">All Status ({artifactStatusCounts.all})</option>
-                      <option value="accepted">Accepted ({artifactStatusCounts.accepted})</option>
-                      <option value="draft">Draft ({artifactStatusCounts.draft})</option>
-                      <option value="rejected">Rejected ({artifactStatusCounts.rejected})</option>
-                    </select>
-                    {(artifactTypeFilter !== "all" || artifactStatusFilter !== "all") && (
-                      <button
-                        onClick={() => {
-                          setArtifactTypeFilter("all");
-                          setArtifactStatusFilter("all");
-                        }}
-                        className="min-h-10 px-3 py-2 text-sm bg-[var(--violet-soft-bg)] border border-[var(--brand-violet)]/40 rounded-lg text-violet-200 hover:bg-[var(--brand-violet)]/20 transition-colors"
-                      >
-                        Show All
-                      </button>
-                    )}
-                    <span className="self-center text-right text-sm text-[var(--text-muted)] sm:ml-auto">
-                      {filteredArtifacts.length} finding{filteredArtifacts.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-
-                  {/* Findings Grid */}
+                  {/* Findings vertical list */}
                   {filteredArtifacts.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:grid-cols-2">
+                    <div className="space-y-3">
                       {filteredArtifacts.map((artifact) => (
-                        <ArtifactCard
+                        <FindingCard
                           key={artifact.id}
                           artifact={artifact}
                           sessionId={session.id}
