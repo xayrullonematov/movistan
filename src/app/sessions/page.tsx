@@ -31,7 +31,7 @@ export default function MySessionsPage() {
         description="Your repo review reports. Click one to see the full report."
         action={
           <Link
-            href="/#form"
+            href="/"
             className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-violet)] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--violet-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
           >
             <Plus size={14} />
