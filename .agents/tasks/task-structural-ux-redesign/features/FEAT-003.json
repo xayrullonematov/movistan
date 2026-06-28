@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix the landing-to-review flow so the 'Analyze repo' action on the landing page creates a review and navigates directly to /sessions/{id}?start=1 instead of sending users to the reviews list with query params. Also reduce workspace chrome and ensure the header is clean.",
+  "status": "completed",
+  "steps": [
+    "Modify src/app/page.tsx handleAnalyze function: instead of routing to `/sessions?${params.toString()}`, make it call the POST /api/sessions endpoint directly (like NewSessionForm does), creating a session with the repo URL and selected review type, then navigate to `/sessions/{sessionId}?start=1`. Use the review type to generate a problemDescription string (reuse the reviewTypes mapping that already exists in NewSessionForm.tsx). Handle loading state and errors gracefully.",
+    "Remove the query param handling from src/app/sessions/page.tsx if it exists (the sessions list page should not be trying to auto-create sessions from query params - that flow now lives on the landing page directly).",
+    "In the new WorkspaceLayout.tsx, ensure the header is minimal: back button, truncated title, and only show Export button when consensus/report data exists. Remove the 'End' button from the top header (move it into a dropdown/menu accessible from Technical Activity tab or replace with a simple 'End review' option in export menu). Remove the Activity link from the header (it is now the Technical Activity tab). Remove StageTransitionToast from the default view (move it into TechnicalActivityPanel).",
+    "Verify that the auto-start flow still works: when navigating to /sessions/{id}?start=1 with an empty session, the useEffect triggers handleStartRound automatically, which starts the analysis immediately."
+  ],
+  "acceptance_criteria": [
+    "Landing page 'Analyze repo' form creates a session directly and navigates to /sessions/{id}?start=1",
+    "User lands directly in the workspace with analysis starting automatically",
+    "Workspace header is clean: back arrow, title, export (only when report exists)",
+    "No 'End' button visible in the default header",
+    "No Activity link in the header (replaced by tab)",
+    "Build passes with no new errors"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/movistan && npx prisma generate && npx next build` - must pass",
+    "Run `cd /projects/sandbox/movistan && npx vitest run` - no NEW test failures introduced"
+  ],
+  "blocked_reason": null,
+  "findings": "All pre-existing test failures remain (19 backend DB timeouts + 1 UI deriveVerdict label mismatch). No new failures introduced. The sessions/page.tsx was already clean with no query param auto-handling. The End button was already scoped to activeTab=technical. Export was already scoped to session.consensus existing. StageTransitionToast moved to TechnicalActivityPanel with stageTransitions prop passed through."
+}

@@ -18,12 +18,48 @@ import {
 } from "lucide-react";
 
 const reviewTypes = [
-  { id: "security", label: "Security review", icon: Shield, desc: "Find vulnerabilities, auth issues, injection risks" },
-  { id: "bugs", label: "Bug hunt", icon: Bug, desc: "Detect logic errors, race conditions, edge cases" },
-  { id: "production", label: "Production readiness", icon: Rocket, desc: "Check deployment, logging, error handling gaps" },
-  { id: "architecture", label: "Architecture review", icon: Layers, desc: "Assess structure, coupling, scalability patterns" },
-  { id: "explain", label: "Explain this repo", icon: BookOpen, desc: "Get a plain-language walkthrough of the codebase" },
-  { id: "refactor", label: "Refactor priorities", icon: Wrench, desc: "Identify tech debt and cleanup opportunities" },
+  {
+    id: "security",
+    label: "Security review",
+    icon: Shield,
+    desc: "Find vulnerabilities, auth issues, injection risks",
+    problem: "Scan this repo for security vulnerabilities: auth bypass, injection flaws, secrets in code, insecure dependencies, and misconfigured permissions. Flag the riskiest files first.",
+  },
+  {
+    id: "bugs",
+    label: "Bug hunt",
+    icon: Bug,
+    desc: "Detect logic errors, race conditions, edge cases",
+    problem: "Find bugs, unhandled edge cases, and logic errors in this codebase. Focus on crash-prone paths, race conditions, null dereferences, and incorrect error handling.",
+  },
+  {
+    id: "production",
+    label: "Production readiness",
+    icon: Rocket,
+    desc: "Check deployment, logging, error handling gaps",
+    problem: "Check if this repo is production-ready. Look for missing error handling, no monitoring/logging, deployment risks, missing tests on critical paths, and configuration issues.",
+  },
+  {
+    id: "architecture",
+    label: "Architecture review",
+    icon: Layers,
+    desc: "Assess structure, coupling, scalability patterns",
+    problem: "Review the architecture of this repo. Identify coupling issues, unclear boundaries, scaling bottlenecks, and areas where the structure will break as the team or traffic grows.",
+  },
+  {
+    id: "explain",
+    label: "Explain this repo",
+    icon: BookOpen,
+    desc: "Get a plain-language walkthrough of the codebase",
+    problem: "Explain what this codebase does, how it is structured, what the main entry points are, and how data flows through the system. Summarize at the file and module level.",
+  },
+  {
+    id: "refactor",
+    label: "Refactor priorities",
+    icon: Wrench,
+    desc: "Identify tech debt and cleanup opportunities",
+    problem: "Identify the highest-impact refactoring targets in this repo. Prioritize by risk, complexity, and how much they block other improvements. Give concrete file-level recommendations.",
+  },
 ] as const;
 
 const sampleFindings = [
@@ -63,12 +99,42 @@ export default function Home() {
   const [repoUrl, setRepoUrl] = useState("");
   const [selectedType, setSelectedType] = useState("production");
   const [showProcess, setShowProcess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = (e: React.FormEvent) => {
+  const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repoUrl.trim()) return;
-    const params = new URLSearchParams({ repo: repoUrl.trim(), type: selectedType });
-    router.push(`/sessions?${params.toString()}`);
+    if (!repoUrl.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const selectedReview = reviewTypes.find((rt) => rt.id === selectedType);
+      const problemDescription = selectedReview?.problem ?? "";
+
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problemDescription,
+          githubRepo: repoUrl.trim(),
+          constraints: [],
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create review session");
+      }
+
+      const data = await res.json();
+      router.push(`/sessions/${data.sessionId}?start=1`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,14 +162,21 @@ export default function Home() {
               className="min-h-12 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] font-mono focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
               autoComplete="off"
               spellCheck={false}
+              disabled={isSubmitting}
             />
             <button
               type="submit"
-              className="min-h-12 whitespace-nowrap rounded-lg bg-[var(--brand-violet)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+              disabled={isSubmitting || !repoUrl.trim()}
+              className="min-h-12 whitespace-nowrap rounded-lg bg-[var(--brand-violet)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
             >
-              Analyze repo →
+              {isSubmitting ? "Creating review..." : "Analyze repo \u2192"}
             </button>
           </form>
+          {error && (
+            <p className="mx-auto max-w-xl text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
+              {error}
+            </p>
+          )}
 
           <div className="flex flex-col items-center gap-2">
             <a
@@ -314,14 +387,21 @@ export default function Home() {
               className="min-h-12 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] font-mono focus:border-[var(--brand-violet)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
               autoComplete="off"
               spellCheck={false}
+              disabled={isSubmitting}
             />
             <button
               type="submit"
-              className="min-h-12 whitespace-nowrap rounded-lg bg-[var(--brand-violet)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
+              disabled={isSubmitting || !repoUrl.trim()}
+              className="min-h-12 whitespace-nowrap rounded-lg bg-[var(--brand-violet)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--violet-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--violet-glow)]"
             >
-              Analyze repo →
+              {isSubmitting ? "Creating review..." : "Analyze repo \u2192"}
             </button>
           </form>
+          {error && (
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
+              {error}
+            </p>
+          )}
         </div>
       </section>
 

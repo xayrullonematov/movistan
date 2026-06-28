@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, FileText, BarChart3 } from "lucide-react";
+import { LayoutDashboard, FileText, Terminal, MessageSquare, BarChart3 } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -15,6 +15,10 @@ interface MobileTabBarProps {
 }
 
 const iconFor = (id: string) => {
+  if (id === "overview") return LayoutDashboard;
+  if (id === "findings") return FileText;
+  if (id === "technical") return Terminal;
+  // Legacy fallbacks
   if (id === "debate") return MessageSquare;
   if (id === "artifacts") return FileText;
   if (id === "results") return BarChart3;
@@ -30,7 +34,8 @@ export default function MobileTabBar({
     <nav
       role="tablist"
       aria-label="Workspace tabs"
-      className="grid grid-cols-3 border-t border-gray-800 bg-gray-950/95 backdrop-blur"
+      className="grid border-t border-gray-800 bg-gray-950/95 backdrop-blur"
+      style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}
     >
       {tabs.map((tab) => {
         const Icon = iconFor(tab.id);

@@ -27,8 +27,8 @@ export default function MySessionsPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <PageHeader
-        title="My reviews"
-        description="Your repo reviews. Click one to jump back in."
+        title="Review history"
+        description="Your repo review reports. Click one to see the full report."
         action={
           <Link
             href="/#form"

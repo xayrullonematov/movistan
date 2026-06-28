@@ -57,6 +57,14 @@ const statusLabel = (s: SessionSummary["status"]) => {
   }
 };
 
+function actionLabel(status: SessionSummary["status"]): string {
+  switch (status) {
+    case "completed": return "Open report";
+    case "active": return "Continue analysis";
+    case "paused": return "Continue analysis";
+  }
+}
+
 export default function SessionsTable({ sessions, loading = false }: SessionsTableProps) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -177,15 +185,13 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
                       Status {sortIconFor("status")}
                     </button>
                   </th>
-                  <th className="px-3 py-2.5 text-center">
-                    <button type="button" onClick={() => toggleSort("round")} className="inline-flex items-center gap-1 hover:text-[var(--text-secondary)]">
-                      Pass {sortIconFor("round")}
-                    </button>
-                  </th>
                   <th className="px-4 py-2.5 text-right">
                     <button type="button" onClick={() => toggleSort("createdAt")} className="inline-flex items-center gap-1 hover:text-[var(--text-secondary)]">
                       Created {sortIconFor("createdAt")}
                     </button>
+                  </th>
+                  <th className="px-4 py-2.5 text-right">
+                    Action
                   </th>
                 </tr>
               </thead>
@@ -195,17 +201,31 @@ export default function SessionsTable({ sessions, loading = false }: SessionsTab
                     <td className="px-4 py-3">
                       <Link
                         href={`/sessions/${session.id}`}
-                        className="block truncate text-[var(--text-primary)] transition-colors hover:text-violet-300"
+                        className="block text-[var(--text-primary)] transition-colors hover:text-violet-300"
                       >
-                        {(session.title ?? session.problemDescription ?? "Untitled review").slice(0, 100)}
+                        <span className="block truncate max-w-md">
+                          {(session.title ?? session.problemDescription ?? "Untitled review").slice(0, 100)}
+                        </span>
+                        {session.currentRound > 0 && (
+                          <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
+                            {session.currentRound} review pass{session.currentRound !== 1 ? "es" : ""}
+                          </span>
+                        )}
                       </Link>
                     </td>
                     <td className="px-3 py-3 text-center">
                       <StatusBadge label={statusLabel(session.status)} variant={statusVariant(session.status)} />
                     </td>
-                    <td className="px-3 py-3 text-center text-[var(--text-muted)]">{session.currentRound}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-muted)] whitespace-nowrap">
                       {timeAgo(session.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/sessions/${session.id}`}
+                        className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium text-violet-300 border border-[var(--brand-violet)]/40 bg-[var(--violet-soft-bg)] hover:bg-[var(--brand-violet)]/20 transition-colors whitespace-nowrap"
+                      >
+                        {actionLabel(session.status)}
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -236,14 +256,19 @@ function ReviewCard({ session }: { session: SessionSummary }) {
         <StatusBadge label={statusLabel(session.status)} variant={statusVariant(session.status)} />
       </div>
       <div className="mt-2 flex items-center gap-3 text-xs text-[var(--text-muted)]">
-        <span>Pass {session.currentRound}</span>
-        <span className="h-1 w-1 rounded-full bg-[var(--border)]" />
+        {session.currentRound > 0 && (
+          <>
+            <span>{session.currentRound} review pass{session.currentRound !== 1 ? "es" : ""}</span>
+            <span className="h-1 w-1 rounded-full bg-[var(--border)]" />
+          </>
+        )}
         <span>{timeAgo(session.createdAt)}</span>
+      </div>
+      <div className="mt-2.5">
+        <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium text-violet-300 border border-[var(--brand-violet)]/40 bg-[var(--violet-soft-bg)]">
+          {actionLabel(session.status)}
+        </span>
       </div>
     </Link>
   );
-}
-
-function timeAgoExport(dateStr: string): string {
-  return timeAgo(dateStr);
 }

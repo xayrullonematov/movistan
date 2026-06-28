@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Rebuild the review workspace layout (WorkspaceLayout.tsx) with a new 3-tab information architecture: Overview (default), Findings, and Technical Activity. Create the new ReviewOverview component as the default tab showing a clean report summary, top findings, recommended next steps, and primary actions. Hide all agent/control-room UI behind Technical Activity tab. Create the ReviewProgressState component for the running/analyzing state that is calm and simple.",
+  "status": "completed",
+  "steps": [
+    "Create src/components/workspace/ReviewSummaryCard.tsx - a summary card that shows: review status, repo name, overall risk/readiness verdict, total findings count, severity breakdown (critical/high/medium/low counts), and recommended next action. Use existing deriveVerdict logic from ResultsDashboard.tsx and the ConsensusOutput type from domain.ts. Follow the styling pattern from the landing page sample report summary bar.",
+    "Create src/components/workspace/TopFindingsList.tsx - show the top 3 findings by severity. Each finding shows severity badge, title, file/location if available from artifact content, short description. Pull data from session.artifacts sorted by severity (risks first, then decisions). Link to Findings tab for full list.",
+    "Create src/components/workspace/RecommendedNextSteps.tsx - a component showing primary actions: Copy fix plan (using the existing handleCopyFixPlan logic), Export report, Re-run review (trigger another pass), and Analyze another repo (link to landing page). Adapt the action buttons from the existing ResultsDashboard actions section.",
+    "Create src/components/workspace/ReviewOverview.tsx - the main Overview tab component that composes ReviewSummaryCard, TopFindingsList, RecommendedNextSteps. For the pre-consensus state (analysis still running or not started), show ReviewProgressState instead. This replaces ResultsDashboard as the default tab.",
+    "Create src/components/workspace/ReviewProgressState.tsx - shown during active analysis. Display: 'Analyzing repository...' heading, current step description (mapped from currentStage: proposal='Reading repository structure', critique='Inspecting important files', revision='Checking for risks and bugs', consensus='Preparing report'), a simple progress indicator (animated bar or dots, not the 4-stage pipeline widget), and a message 'You will see findings here as soon as they are ready.' Optional: 'Show technical activity' link that switches to Technical Activity tab.",
+    "Create src/components/workspace/TechnicalActivityPanel.tsx - a wrapper component that contains the existing DebateChat, AgentArena/AgentStrip, ToolCallTrace, StageProgressBar, RoundEtaIndicator, TokenBudgetBar, and round indicators. This is the 'power user' tab. Import and compose existing components - do not delete them.",
+    "Rewrite src/components/workspace/WorkspaceLayout.tsx to implement the new 3-tab structure: tabs are [{id:'overview', label:'Overview'}, {id:'findings', label:'Findings', badge: artifactCount}, {id:'technical', label:'Technical activity'}]. Default activeTab is 'overview'. Remove the left-side AgentArena panel from the main layout. Remove footer round dots from default view. Remove StageProgressBar from the header area (moved into TechnicalActivityPanel). Simplify header: keep back button and title. Hide ExportMenu unless consensus exists. Hide 'End' button in a menu or only show in Technical Activity. Keep the auto-start logic (useEffect with ?start=1). Keep all existing API call handlers.",
+    "Update src/components/workspace/MobileTabBar.tsx to reflect the 3 new tabs (Overview, Findings, Technical activity) with appropriate icons."
+  ],
+  "acceptance_criteria": [
+    "Default view when opening a session is the Overview tab",
+    "Overview shows ReviewSummaryCard when consensus data exists",
+    "Overview shows ReviewProgressState when analysis is active",
+    "Technical activity tab contains all the agent/debug/control-room components",
+    "No agent panels, token bars, stage progress pipelines, or round dots visible in Overview or Findings tabs",
+    "All existing workspace components are preserved (just re-homed into Technical Activity)",
+    "Auto-start with ?start=1 query param still works",
+    "Build passes with no new errors"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/movistan && npx prisma generate && npx next build` - must pass",
+    "Run `cd /projects/sandbox/movistan && npx vitest run` - no NEW test failures introduced"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. 22 pre-existing test failures (all backend: database-stores, round-orchestrator, summary-services, and 1 ui-logic deriveVerdict assertion) - none introduced by this change. The useEventStream hook returns Partial<Record<AgentType, PersistedEvent>> not a Map - corrected in TechnicalActivityPanel interface. StageTransitionToast is kept at the layout level since it monitors all transitions regardless of active tab."
+}
